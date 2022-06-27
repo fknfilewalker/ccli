@@ -3,6 +3,8 @@
 #include <sstream>
 #include <deque>
 
+std::function<void(const std::string&)> ccli::log::mWarningCallback;
+
 std::map<std::string, var_base*>& var_system::getLongNameMap()
 {
 	static std::map<std::string, var_base*> map;
@@ -24,13 +26,13 @@ std::set<var_base*>& var_system::getCallbackSet()
 void var_system::addToCallbackSet(var_base* aVar)
 {
 	auto& set = getCallbackSet();
-	if(aVar->hasCallback()) set.insert(aVar);
+	set.insert(aVar);
 }
 
 void var_system::removeFromCallbackSet(var_base* aVar)
 {
 	auto& set = getCallbackSet();
-	if (aVar->hasCallback()) set.erase(aVar);
+	set.erase(aVar);
 }
 
 var_base* var_system::findVarByLongName(const std::string& aLongName)

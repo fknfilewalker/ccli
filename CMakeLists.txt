@@ -19,7 +19,17 @@ cmake_minimum_required(VERSION 3.14.0)
 set(APP_NAME example)
 
 # COMPILER
-#set(CMAKE_CXX_FLAGS -std=c++17)
+if(WIN32)
+	# c++ 17 and multi core compilation
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHc /std:c++17 /MP /Qpar")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:CONSOLE")
+elseif(APPLE)
+	set(CMAKE_CXX_STANDARD 17)
+	set(CMAKE_CXX_EXTENSIONS OFF)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wwrite-strings -x objective-c++")
+elseif(UNIX)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wwrite-strings")
+endif()
 
 # OUTPUT DIR
 # DEFAULT
@@ -46,7 +56,6 @@ file(GLOB HEADERS "*.h" "*.hpp")
 file(GLOB SOURCES "*.cpp")
 
 # exe
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:CONSOLE")
 add_executable(${APP_NAME} WIN32 ${SOURCES} ${HEADERS})
 set_target_properties(${APP_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")   
 set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${APP_NAME}) 

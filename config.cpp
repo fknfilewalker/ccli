@@ -9,7 +9,7 @@ namespace
 	{
 		std::ofstream file(aFilename, std::ios::out | std::ios::binary);
 		if (!file.is_open()) {
-			//spdlog::error("tLoader: Could not open file {} for writing", aFilename);
+			ccli::log::warning("Could not open file '" + aFilename + "' for writing");
 			return false;
 		}
 		file.write(aContent.c_str(), static_cast<std::streamsize>(aContent.size()));

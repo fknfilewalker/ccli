@@ -8,6 +8,25 @@
 #include <array>
 #include <sstream>
 #include <functional>
+#include <iostream>
+
+namespace ccli
+{
+	class log {
+	public:
+		static void log::warning(const std::string& aString)
+		{
+			if (mWarningCallback) mWarningCallback(aString);
+			else std::cout << aString << std::endl;
+		}
+		static void log::setWarningCallback(void(*aCallback)(const std::string&))
+		{
+			mWarningCallback = aCallback;
+		}
+	private:
+		static std::function<void(const std::string&)> mWarningCallback;
+	};
+}
 
 class var_base;
 // #todo: use templates?
@@ -32,11 +51,11 @@ private:
 									std::map<std::string, var_base*>& mapShort = getShortNameMap();
 									if (!aLongName.empty()) {
 										const bool inserted = mapLong.insert(std::pair<std::string, var_base*>(aLongName, aVar)).second;
-										//if(!inserted) spdlog::error("Long identifier '--{}' already exists: {}", aLongName);
+										if (!inserted) ccli::log::warning("Long identifier '--" + aLongName + "' already exists");
 									}
 									if (!aShortName.empty()) {
 										const bool inserted = mapShort.insert(std::pair<std::string, var_base*>(aShortName, aVar)).second;
-										//if (!inserted) spdlog::error("Short identifier '-{}' already exists", aShortName);
+										if (!inserted) ccli::log::warning("Short identifier '--" + aShortName + "' already exists");
 									}
 								}
 	static void					removeFromList(const std::string& aLongName, const std::string& aShortName, var_base* const aVar)
@@ -68,13 +87,13 @@ public:
 								{
 									assert(!mLongName.empty() || !mShortName.empty());
 									var_system::addToList(mLongName, mShortName, this);
-									var_system::addToCallbackSet(this);
+									if(mHasCallback) var_system::addToCallbackSet(this);
 								}
 
 	virtual						~var_base()
 								{
 									var_system::removeFromList(mLongName, mShortName, this);
-									var_system::removeFromCallbackSet(this);
+									if (mHasCallback) var_system::removeFromCallbackSet(this);
 								}
 
 	const std::string&			getLongName() const { return mLongName; }
