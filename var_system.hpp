@@ -51,7 +51,7 @@ private:
 									}
 									if (!aShortName.empty()) {
 										const bool inserted = mapShort.insert(std::pair<std::string, var_base*>(aShortName, aVar)).second;
-										if (!inserted) ccli::log::warning("Short identifier '--" + aShortName + "' already exists");
+										if (!inserted) ccli::log::warning("Short identifier '-" + aShortName + "' already exists");
 									}
 								}
 	static void					removeFromList(const std::string& aLongName, const std::string& aShortName, var_base* const aVar)
