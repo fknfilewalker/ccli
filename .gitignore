@@ -1,0 +1,16 @@
+# project
+_project/
+_bin/
+_*/
+CMakeLists.txt.user
+*.cfg
+build/
+
+#intelij
+.idea/
+
+# vscode
+.vscode
+
+# macos
+.DS_Store
