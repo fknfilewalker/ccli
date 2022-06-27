@@ -14,17 +14,13 @@ namespace ccli
 {
 	class log {
 	public:
-		static void log::warning(const std::string& aString)
+		static void warning(const std::string& aString) { funcWarning()(aString); }
+		static std::function<void(const std::string&)> funcWarning(const std::function<void(const std::string&)>& aCallback = {})
 		{
-			if (mWarningCallback) mWarningCallback(aString);
-			else std::cout << aString << std::endl;
+			static std::function<void(const std::string&)> func = [](const std::string& aString) { std::cout << aString << std::endl; };
+			if (aCallback) func = aCallback;
+			return func;
 		}
-		static void log::setWarningCallback(void(*aCallback)(const std::string&))
-		{
-			mWarningCallback = aCallback;
-		}
-	private:
-		static std::function<void(const std::string&)> mWarningCallback;
 	};
 }
 

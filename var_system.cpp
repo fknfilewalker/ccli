@@ -3,8 +3,6 @@
 #include <sstream>
 #include <deque>
 
-std::function<void(const std::string&)> ccli::log::mWarningCallback;
-
 std::map<std::string, var_base*>& var_system::getLongNameMap()
 {
 	static std::map<std::string, var_base*> map;
