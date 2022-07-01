@@ -25,7 +25,6 @@ namespace ccli
 }
 
 class var_base;
-// #todo: use templates?
 class var_system
 {
 public:
@@ -78,8 +77,8 @@ class var_base
 {
 public:
 								var_base(std::string aLongName, std::string aShortName, std::string aDescription, const bool aHasCallback) :
-								mLongName(std::move(aLongName)), mShortName(std::move(aShortName)),
-								mDescription(std::move(aDescription)), mHasCallback(aHasCallback)
+									mLongName(std::move(aLongName)), mShortName(std::move(aShortName)),
+									mDescription(std::move(aDescription)), mHasCallback(aHasCallback), mLocked(false)
 								{
 									assert(!mLongName.empty() || !mShortName.empty());
 									var_system::addToList(mLongName, mShortName, this);
@@ -105,20 +104,25 @@ public:
 	virtual bool				isConfigRead() const = 0;
 	virtual bool				isConfigReadWrite() const = 0;
 
+	bool						locked() const { return mLocked; }
+	void						locked(const bool aLocked) { mLocked = aLocked; }
+
+
 protected:
 
 	const std::string			mLongName;
 	const std::string			mShortName;
 	const std::string			mDescription;
 	const bool					mHasCallback;
+	bool						mLocked;
 };
 
 enum VarFlag {
 	NONE		= (0 << 0),
 	INIT		= (1 << 0),		// can only be set from the command-line
 	ROM			= (1 << 1),		// display only, cannot be set at all
-	CONFIG_RD	= (1 << 2),		// load variable from config file
-	CONFIG_RDWR = (3 << 2),		// load variable from config file and save changes back to config file when application is closed
+	CONFIG_RD	= (1 << 2),		// allow loading variable from config file
+	CONFIG_RDWR = (3 << 2),		// allow loading variable from config file and save changes back to config file when application is closed
 	MANUAL_EXEC = (1 << 4)		// execute callback not immediately after value is set but when execute executeCallback/executeCallbacks is called
 };
 
@@ -134,8 +138,9 @@ public:
 	std::array<T, S>&	getValue() { return mValue; }
 	void				setValue(const std::array<T, S>& aValue)
 						{
+							if (mValue.size() == 0 || mLocked) return;
 							mValue = aValue; mCallbackCharged = true;
-							if (isCbAutoExec()) executeCallback();
+							if (isCallbackAutoExecuted()) executeCallback();
 						}
 
 	void				chargeCallback() { mCallbackCharged = true; }
@@ -151,11 +156,11 @@ public:
 
 	bool				isConfigRead() const override { return !mLongName.empty() && F & CONFIG_RD; }
 	bool				isConfigReadWrite() const override { return !mLongName.empty() && F & CONFIG_RDWR; }
-	bool				isCbAutoExec() const { return !(F & MANUAL_EXEC); }
+	bool				isCallbackAutoExecuted() const { return !(F & MANUAL_EXEC); }
 
 	void				setValueString(const std::string& aString) override
 						{
-							if (mValue.size() == 0) return;
+							if (mValue.size() == 0 || mLocked) return;
 
 							size_t count = 0;
 							size_t current = 0;
@@ -182,7 +187,7 @@ public:
 							} while (pos != std::string::npos);
 		
 							mCallbackCharged = true;
-							if (isCbAutoExec()) executeCallback();
+							if (isCallbackAutoExecuted()) executeCallback();
 						}
 	std::string			getValueString() override
 						{
