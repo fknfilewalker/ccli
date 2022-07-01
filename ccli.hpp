@@ -2,22 +2,12 @@
 
 #include <string>
 #include <array>
-#include <sstream>
 #include <functional>
 #include <iostream>
 
 namespace ccli
 {
-	class log {
-	public:
-		static void warning(const std::string& aString) { funcWarning()(aString); }
-		static std::function<void(const std::string&)> funcWarning(const std::function<void(const std::string&)>& aCallback = {})
-		{
-			static std::function<void(const std::string&)> func = [](const std::string& aString) { std::cout << aString << std::endl; };
-			if (aCallback) func = aCallback;
-			return func;
-		}
-	};
+	void setWarningLogCallback(const std::function<void(const std::string&)>& aCallback = {});
 	void parseArgs(int aArgc, char* const aArgv[]);
 	void loadConfig(const std::string& aCfgFile);
 	void writeConfig(const std::string& aCfgFile);
@@ -27,7 +17,7 @@ namespace ccli
 	class var_base
 	{
 	public:
-									var_base(std::string aLongName, std::string aShortName, std::string aDescription, const bool aHasCallback);
+									var_base(std::string aLongName, std::string aShortName, std::string aDescription, bool aHasCallback);
 
 		virtual						~var_base();
 
@@ -45,7 +35,7 @@ namespace ccli
 		virtual bool				isConfigReadWrite() const = 0;
 
 		bool						locked() const;
-		void						locked(const bool aLocked);
+		void						locked(bool aLocked);
 
 	protected:
 		const std::string			mLongName;

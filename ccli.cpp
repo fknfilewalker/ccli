@@ -13,6 +13,18 @@ namespace {
 	/*
 	** vars
 	*/
+	namespace log {
+		std::function<void(const std::string&)> funcWarning(const std::function<void(const std::string&)>& aCallback = {})
+		{
+			static std::function<void(const std::string&)> func = [](const std::string& aString) { std::cout << aString << std::endl; };
+			if (aCallback) func = aCallback;
+			return func;
+		}
+		void warning(const std::string& aString) { funcWarning()(aString); }
+	};
+	/*
+	** vars
+	*/
 	// contains static lists keeping track of all vars
 	std::map<std::string, ccli::var_base*>& getLongNameVarMap()
 	{
@@ -44,11 +56,11 @@ namespace {
 		std::map<std::string, ccli::var_base*>& mapShort = getShortNameVarMap();
 		if (!aLongName.empty()) {
 			const bool inserted = mapLong.insert(std::pair<std::string, ccli::var_base*>(aLongName, aVar)).second;
-			if (!inserted) ccli::log::warning("Long identifier '--" + aLongName + "' already exists");
+			if (!inserted) log::warning("Long identifier '--" + aLongName + "' already exists");
 		}
 		if (!aShortName.empty()) {
 			const bool inserted = mapShort.insert(std::pair<std::string, ccli::var_base*>(aShortName, aVar)).second;
-			if (!inserted) ccli::log::warning("Short identifier '-" + aShortName + "' already exists");
+			if (!inserted) log::warning("Short identifier '-" + aShortName + "' already exists");
 		}
 	}
 	void removeFromVarList(const std::string& aLongName, const std::string& aShortName, const ccli::var_base* const aVar)
@@ -113,13 +125,18 @@ namespace {
 	{
 		std::ofstream file(aFilename, std::ios::out | std::ios::binary);
 		if (!file.is_open()) {
-			ccli::log::warning("Could not open file '" + aFilename + "' for writing");
+			log::warning("Could not open file '" + aFilename + "' for writing");
 			return false;
 		}
 		file.write(aContent.c_str(), static_cast<std::streamsize>(aContent.size()));
 		file.close();
 		return true;
 	}
+}
+
+void ccli::setWarningLogCallback(const std::function<void(const std::string&)>& aCallback)
+{
+	log::funcWarning(aCallback);
 }
 
 void ccli::parseArgs(const int aArgc, char* const aArgv[])
