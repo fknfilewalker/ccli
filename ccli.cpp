@@ -1,0 +1,250 @@
+#include "ccli.hpp"
+
+#include <cassert>
+#include <map>
+#include <set>
+#include <sstream>
+#include <deque>
+#include <fstream>
+
+constexpr char configDelimiter = '=';
+
+namespace {
+	/*
+	** vars
+	*/
+	// contains static lists keeping track of all vars
+	std::map<std::string, ccli::var_base*>& getLongNameVarMap()
+	{
+		static std::map<std::string, ccli::var_base*> map;
+		return map;
+	}
+	std::map<std::string, ccli::var_base*>& getShortNameVarMap()
+	{
+		static std::map<std::string, ccli::var_base*> map;
+		return map;
+	}
+	ccli::var_base* findVarByLongName(const std::string& aLongName)
+	{
+		std::map<std::string, ccli::var_base*>& map = getLongNameVarMap();
+		const auto it = map.find(aLongName);
+		if (it != map.end()) return it->second;
+		return nullptr;
+	}
+	ccli::var_base* findVarByShortName(const std::string& aShortName)
+	{
+		std::map<std::string, ccli::var_base*>& map = getShortNameVarMap();
+		const auto it = map.find(aShortName);
+		if (it != map.end()) return it->second;
+		return nullptr;
+	}
+	void addToVarList(const std::string& aLongName, const std::string& aShortName, ccli::var_base* const aVar)
+	{
+		std::map<std::string, ccli::var_base*>& mapLong = getLongNameVarMap();
+		std::map<std::string, ccli::var_base*>& mapShort = getShortNameVarMap();
+		if (!aLongName.empty()) {
+			const bool inserted = mapLong.insert(std::pair<std::string, ccli::var_base*>(aLongName, aVar)).second;
+			if (!inserted) ccli::log::warning("Long identifier '--" + aLongName + "' already exists");
+		}
+		if (!aShortName.empty()) {
+			const bool inserted = mapShort.insert(std::pair<std::string, ccli::var_base*>(aShortName, aVar)).second;
+			if (!inserted) ccli::log::warning("Short identifier '-" + aShortName + "' already exists");
+		}
+	}
+	void removeFromVarList(const std::string& aLongName, const std::string& aShortName, const ccli::var_base* const aVar)
+	{
+		std::map<std::string, ccli::var_base*>& mapLong = getLongNameVarMap();
+		std::map<std::string, ccli::var_base*>& mapShort = getShortNameVarMap();
+
+		if (!aLongName.empty()) {
+			const auto itr = mapLong.find(aLongName);
+			if (itr != mapLong.end() && itr->second == aVar) mapLong.erase(itr);
+		}
+		if (!aShortName.empty()) {
+			const auto itr = mapShort.find(aShortName);
+			if (itr != mapShort.end() && itr->second == aVar) mapShort.erase(itr);
+		}
+	}
+
+	/*
+	** callbacks
+	*/
+	// contains static list keeping track of all callbacks
+	std::set<ccli::var_base*>& getCallbackSet()
+	{
+		static std::set<ccli::var_base*> set;
+		return set;
+	}
+	void addToCallbackSet(ccli::var_base* aVar)
+	{
+		auto& set = getCallbackSet();
+		set.insert(aVar);
+	}
+	void removeFromCallbackSet(ccli::var_base* aVar)
+	{
+		auto& set = getCallbackSet();
+		set.erase(aVar);
+	}
+
+	/*
+	** config
+	*/
+	// keep track of all data from loaded config
+	std::map<std::string, std::string>& getConfigMap()
+	{
+		static std::map<std::string, std::string> map;
+		return map;
+	}
+	bool doesConfigVarNeedUpdate(std::map<std::string, std::string>& aMap, const std::string& aToken, const std::string& aValue)
+	{
+		const auto it = aMap.find(aToken);
+		if (it != aMap.end() && it->second != aValue) {
+			it->second = aValue;
+			return true;
+		}
+		if (it == aMap.end())
+		{
+			aMap.insert({ aToken, aValue });
+			return true;
+		}
+		return false;
+	}
+	bool writeConfigFile(std::string const& aFilename, std::string const& aContent)
+	{
+		std::ofstream file(aFilename, std::ios::out | std::ios::binary);
+		if (!file.is_open()) {
+			ccli::log::warning("Could not open file '" + aFilename + "' for writing");
+			return false;
+		}
+		file.write(aContent.c_str(), static_cast<std::streamsize>(aContent.size()));
+		file.close();
+		return true;
+	}
+}
+
+void ccli::parseArgs(const int aArgc, char* const aArgv[])
+{
+	std::deque<std::string> args;
+	for (int i = 0; i < aArgc; i++) {
+		args.emplace_back(aArgv[i]);
+	}
+
+	var_base* var = nullptr;
+	while (!args.empty())
+	{
+		const auto& arg = args.front();
+		const bool shortName = !arg.empty() ? arg[0] == '-' : false;
+		const bool longName = arg.size() >= 2 ? shortName && arg[1] == '-' : false;
+		if (shortName || longName) {
+			if (var || arg.size() == 1) var->setValueString(""); // if no value follows just send empty string to var
+			if (longName) var = findVarByLongName(arg.substr(2));
+			else if (shortName) var = findVarByShortName(arg.substr(1));
+		}
+		else if (var)
+		{
+			var->setValueString(arg);
+			var = nullptr;
+		}
+		args.pop_front();
+	}
+}
+
+void ccli::loadConfig(const std::string& aCfgFile)
+{
+	std::map<std::string, std::string>& configMap = getConfigMap();
+	configMap.clear();
+	// check if file exists
+	std::ifstream f(aCfgFile);
+
+	// load config line by line
+	while (f.good()) {
+		std::string line;
+		std::getline(f, line);
+		// remove quotation marks etc
+		line.erase(std::remove(line.begin(), line.end(), '\"'), line.end());
+		line.erase(std::remove(line.begin(), line.end(), '\''), line.end());
+		const size_t pos = line.find(configDelimiter);
+		if (pos != std::string::npos) {
+			std::string token = line.substr(0, pos);
+			std::string value = line.substr(pos + 1, line.size());
+			var_base* var = findVarByLongName(token);
+			// also check rd
+			if (var && var->isConfigRead()) {
+				var->setValueString(value);
+				if (var->isConfigReadWrite()) configMap.insert({ token, value });
+			}
+			else configMap.insert({ token, value });
+		}
+	}
+	f.close();
+}
+
+void ccli::writeConfig(const std::string& aCfgFile)
+{
+	std::map<std::string, std::string>& configMap = getConfigMap();
+	const auto map = getLongNameVarMap();
+	bool write = false;
+	// update vars
+	for (const auto& [fst, snd] : map)
+	{
+		if (snd->isConfigReadWrite()) {
+			// also check if rdwr
+			write |= doesConfigVarNeedUpdate(configMap, fst, snd->getValueString());
+		}
+	}
+	if (!write) return;
+	// create output string
+	std::string out;
+	for (const auto& [fst, snd] : configMap) {
+		out += fst + configDelimiter;
+		out += "\"" + snd + "\"\n";
+	}
+	// write config
+	if (!out.empty()) writeConfigFile(aCfgFile, out);
+}
+
+void ccli::executeCallbacks()
+{
+	for (const auto var : getCallbackSet())
+	{
+		var->executeCallback();
+	}
+}
+
+/*
+** var_base
+*/
+ccli::var_base::var_base(std::string aLongName, std::string aShortName, std::string aDescription,
+	const bool aHasCallback):
+	mLongName(std::move(aLongName)), mShortName(std::move(aShortName)),
+	mDescription(std::move(aDescription)), mHasCallback(aHasCallback), mLocked(false)
+{
+	assert(!mLongName.empty() || !mShortName.empty());
+	addToVarList(mLongName, mShortName, this);
+	if(mHasCallback) addToCallbackSet(this);
+}
+
+ccli::var_base::~var_base()
+{
+	removeFromVarList(mLongName, mShortName, this);
+	if (mHasCallback) removeFromCallbackSet(this);
+}
+
+const std::string& ccli::var_base::getLongName() const
+{ return mLongName; }
+
+const std::string& ccli::var_base::getShortName() const
+{ return mShortName; }
+
+const std::string& ccli::var_base::getDescription() const
+{ return mDescription; }
+
+bool ccli::var_base::hasCallback() const
+{ return mHasCallback; }
+
+bool ccli::var_base::locked() const
+{ return mLocked; }
+
+void ccli::var_base::locked(const bool aLocked)
+{ mLocked = aLocked; }
+
