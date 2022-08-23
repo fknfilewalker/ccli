@@ -14,6 +14,14 @@ namespace ccli
 	void							executeCallbacks();
 	void							printHelp();
 
+	enum Flag {
+		NONE						= (0 << 0),
+		INIT						= (1 << 0),	// can only be set through parseArgs
+		ROM							= (1 << 1),	// display only, cannot be changed at all
+		CONFIG_RD					= (1 << 2),	// load variable from config file
+		CONFIG_RDWR					= (3 << 2),	// load variable from config file and save changes back to config file
+		MANUAL_EXEC					= (1 << 4)	// execute callback only when executeCallback/executeCallbacks is called
+	};
 
 	class var_base
 	{
@@ -49,16 +57,6 @@ namespace ccli
 		bool						mLocked;
 	};
 
-
-	enum Flag {
-		NONE		= (0 << 0),
-		INIT		= (1 << 0),		// can only be set through parseArgs
-		ROM			= (1 << 1),		// display only, cannot be changed at all
-		CONFIG_RD	= (1 << 2),		// load variable from config file
-		CONFIG_RDWR = (3 << 2),		// load variable from config file and save changes back to config file
-		MANUAL_EXEC = (1 << 4)		// execute callback only when executeCallback/executeCallbacks is called
-	};
-
 	template <class T, size_t S = 1, uint32_t F = NONE>
 	class var final : public var_base {
 		static_assert(std::is_same_v<T, int> || std::is_same_v<T, float> || std::is_same_v<T, bool> || std::is_same_v<T, std::string>, "Type must be bool, int, float or string");
@@ -75,8 +73,11 @@ namespace ccli
 		void				setValue(const std::array<T, S>& aValue)
 							{
 								if (mValue.size() == 0 || mLocked) return;
-								mValue = aValue; mCallbackCharged = true;
-								if (isCallbackAutoExecuted()) executeCallback();
+								mValue = aValue;
+								if (hasCallback()) {
+									mCallbackCharged = true;
+									if (isCallbackAutoExecuted()) executeCallback();
+								}
 							}
 
 		void				chargeCallback() { mCallbackCharged = true; }

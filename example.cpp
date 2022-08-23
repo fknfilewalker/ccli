@@ -2,10 +2,9 @@
 #include "ccli.hpp"
 #include <iostream>
 
-using namespace ccli;
 
-ccli::var<float, 2, CONFIG_RDWR> var_test("test", "t", "Just a test", { 100,100 });
-ccli::var<float, 2, CONFIG_RDWR> var_test2("hallo", "", "Hallo", { 100,100 });
+ccli::var<float, 2, ccli::CONFIG_RDWR> var_test("test", "t", "Just a test", { 100,100 });
+ccli::var<float, 2, ccli::CONFIG_RDWR> var_test2("hallo", "", "Hallo", { 100,100 });
 
 void print(const std::array<float, 2> aValue)
 {
