@@ -6,8 +6,12 @@
 #include <sstream>
 #include <deque>
 #include <fstream>
+#include <filesystem>
+#include <iostream>
 
 constexpr char configDelimiter = '=';
+constexpr uint32_t helpColumnWidthShort = 20;
+constexpr uint32_t helpColumnWidthLong = 20;
 
 namespace {
 	/*
@@ -69,12 +73,12 @@ namespace {
 		std::map<std::string, ccli::var_base*>& mapShort = getShortNameVarMap();
 
 		if (!aLongName.empty()) {
-			const auto itr = mapLong.find(aLongName);
-			if (itr != mapLong.end() && itr->second == aVar) mapLong.erase(itr);
+			const auto it = mapLong.find(aLongName);
+			if (it != mapLong.end() && it->second == aVar) mapLong.erase(it);
 		}
 		if (!aShortName.empty()) {
-			const auto itr = mapShort.find(aShortName);
-			if (itr != mapShort.end() && itr->second == aVar) mapShort.erase(itr);
+			const auto it = mapShort.find(aShortName);
+			if (it != mapShort.end() && it->second == aVar) mapShort.erase(it);
 		}
 	}
 
@@ -139,31 +143,39 @@ void ccli::setWarningLogCallback(const std::function<void(const std::string&)>& 
 	log::funcWarning(aCallback);
 }
 
-void ccli::parseArgs(const int aArgc, char* const aArgv[])
+bool ccli::parseArgs(const int aArgc, char* const aArgv[])
 {
 	std::deque<std::string> args;
 	for (int i = 0; i < aArgc; i++) {
 		args.emplace_back(aArgv[i]);
 	}
+	if(!args.empty()) {
+		// check if first arg is exe
+		if(std::filesystem::exists(std::filesystem::status(args.front()))) {
+			args.pop_front();
+		}
+	}
 
+	bool error = false;
 	var_base* var = nullptr;
-	while (!args.empty())
-	{
+	while (!args.empty()) {
 		const auto& arg = args.front();
 		const bool shortName = !arg.empty() ? arg[0] == '-' : false;
 		const bool longName = arg.size() >= 2 ? shortName && arg[1] == '-' : false;
 		if (shortName || longName) {
-			if (var || arg.size() == 1) var->setValueString(""); // if no value follows just send empty string to var
 			if (longName) var = findVarByLongName(arg.substr(2));
 			else if (shortName) var = findVarByShortName(arg.substr(1));
+			if (var && var->isSingleBool()) var->setValueString("");
+			if (var == nullptr) log::warning("warning: '" + arg + "' not found");
 		}
-		else if (var)
-		{
+		// var found
+		else if (var) {
 			var->setValueString(arg);
 			var = nullptr;
 		}
 		args.pop_front();
 	}
+	return error;
 }
 
 void ccli::loadConfig(const std::string& aCfgFile)
@@ -228,13 +240,48 @@ void ccli::executeCallbacks()
 	}
 }
 
+void ccli::printHelp()
+{
+	const std::map<std::string, ccli::var_base*>& mapLong = getLongNameVarMap();
+	const std::map<std::string, ccli::var_base*>& mapShort = getShortNameVarMap();
+
+	for(const auto& var : mapShort)
+	{
+		std::string s = "  -" + var.second->getShortName();
+		//if(!var.second->getLongName().empty()) s += " | --" + var.second->getLongName();
+		if (s.size() > helpColumnWidthShort)
+		{
+			log::warning(s);
+			s.clear();
+		}
+		s += std::string(helpColumnWidthShort - s.size(), ' ');
+		s += var.second->getDescription();
+		log::warning(s);
+	}
+	for (const auto& var : mapLong)
+	{
+		//if(var.second->getShortName().empty())
+		{
+			std::string s = "  --" + var.second->getLongName();
+			if (s.size() > helpColumnWidthLong)
+			{
+				log::warning(s);
+				s.clear();
+			}
+			s += std::string(helpColumnWidthLong - s.size(), ' ');
+			s += var.second->getDescription();
+			log::warning(s);
+		}
+	}
+}
+
 /*
 ** var_base
 */
-ccli::var_base::var_base(std::string aLongName, std::string aShortName, std::string aDescription,
+ccli::var_base::var_base(std::string aLongName, std::string aShortName, std::string aDescription, bool aSingleBool,
 	const bool aHasCallback):
 	mLongName(std::move(aLongName)), mShortName(std::move(aShortName)),
-	mDescription(std::move(aDescription)), mHasCallback(aHasCallback), mLocked(false)
+	mDescription(std::move(aDescription)), mSingleBool(aSingleBool), mHasCallback(aHasCallback), mLocked(false)
 {
 	assert(!mLongName.empty() || !mShortName.empty());
 	addToVarList(mLongName, mShortName, this);
@@ -255,6 +302,9 @@ const std::string& ccli::var_base::getShortName() const
 
 const std::string& ccli::var_base::getDescription() const
 { return mDescription; }
+
+bool ccli::var_base::isSingleBool() const
+{ return mSingleBool; }
 
 bool ccli::var_base::hasCallback() const
 { return mHasCallback; }

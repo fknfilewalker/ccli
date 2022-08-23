@@ -3,21 +3,22 @@
 #include <string>
 #include <array>
 #include <functional>
-#include <iostream>
+#include <sstream>
 
 namespace ccli
 {
-	void setWarningLogCallback(const std::function<void(const std::string&)>& aCallback = {});
-	void parseArgs(int aArgc, char* const aArgv[]);
-	void loadConfig(const std::string& aCfgFile);
-	void writeConfig(const std::string& aCfgFile);
-	void executeCallbacks();
+	void							setWarningLogCallback(const std::function<void(const std::string&)>& aCallback = {});
+	bool							parseArgs(int aArgc, char* const aArgv[]);
+	void							loadConfig(const std::string& aCfgFile);
+	void							writeConfig(const std::string& aCfgFile);
+	void							executeCallbacks();
+	void							printHelp();
 
 
 	class var_base
 	{
 	public:
-									var_base(std::string aLongName, std::string aShortName, std::string aDescription, bool aHasCallback);
+									var_base(std::string aLongName, std::string aShortName, std::string aDescription, bool aSingleBool, bool aHasCallback);
 
 		virtual						~var_base();
 
@@ -27,7 +28,9 @@ namespace ccli
 
 		virtual void				setValueString(const std::string& aString) = 0;
 		virtual std::string			getValueString() = 0;
-		
+
+		bool						isSingleBool() const;
+
 		bool						hasCallback() const;
 		virtual bool				executeCallback() = 0;
 
@@ -41,6 +44,7 @@ namespace ccli
 		const std::string			mLongName;
 		const std::string			mShortName;
 		const std::string			mDescription;
+		const bool					mSingleBool;
 		const bool					mHasCallback;
 		bool						mLocked;
 	};
@@ -48,19 +52,22 @@ namespace ccli
 
 	enum Flag {
 		NONE		= (0 << 0),
-		INIT		= (1 << 0),		// can only be set from the command-line
-		ROM			= (1 << 1),		// display only, cannot be set at all
-		CONFIG_RD	= (1 << 2),		// allow loading variable from config file
-		CONFIG_RDWR = (3 << 2),		// allow loading variable from config file and save changes back to config file when application is closed
-		MANUAL_EXEC = (1 << 4)		// execute callback not immediately after value is set but when execute executeCallback/executeCallbacks is called
+		INIT		= (1 << 0),		// can only be set through parseArgs
+		ROM			= (1 << 1),		// display only, cannot be changed at all
+		CONFIG_RD	= (1 << 2),		// load variable from config file
+		CONFIG_RDWR = (3 << 2),		// load variable from config file and save changes back to config file
+		MANUAL_EXEC = (1 << 4)		// execute callback only when executeCallback/executeCallbacks is called
 	};
 
 	template <class T, size_t S = 1, uint32_t F = NONE>
 	class var final : public var_base {
 		static_assert(std::is_same_v<T, int> || std::is_same_v<T, float> || std::is_same_v<T, bool> || std::is_same_v<T, std::string>, "Type must be bool, int, float or string");
+		static_assert(S >= 1, "Size must be larger 0");
 	public:
-							var(const std::string& aLongName, const std::string& aShortName, const std::string& aDescription, const std::array<T, S>& aValue = {}, const std::function<void(const std::array<T, S>&)> aCallback = {})
-								: var_base(aLongName, aShortName, aDescription, aCallback != nullptr), mCallback(aCallback), mCallbackCharged(false), mValue(aValue) {}
+							var(const std::string& aLongName, const std::string& aShortName, const std::string& aDescription, 
+								const std::array<T, S>& aValue = {}, const std::function<void(const std::array<T, S>&)> aCallback = {})
+								: var_base(aLongName, aShortName, aDescription, std::is_same_v<T, bool> && S == 1, aCallback != nullptr),
+								mCallback(aCallback), mCallbackCharged(false), mValue(aValue) {}
 
 							~var() override = default;
 
@@ -90,7 +97,9 @@ namespace ccli
 
 		void				setValueString(const std::string& aString) override
 							{
-								if (mValue.size() == 0 || mLocked) return;
+								if (mLocked) return;
+								// empty string only allowed for bool and string
+								if constexpr (!std::is_same_v<T, bool> && !std::is_same_v<T, std::string>) if (aString.empty()) return;
 
 								size_t count = 0;
 								size_t current = 0;
@@ -131,7 +140,6 @@ namespace ccli
 								return s;
 							}
 	private:
-
 		const std::string	mDelimiter = ",";
 		const std::function<void(const std::array<T, S>&)> mCallback;
 		bool				mCallbackCharged;
