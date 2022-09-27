@@ -143,7 +143,7 @@ void ccli::setWarningLogCallback(const std::function<void(const std::string&)>& 
 	log::funcWarning(aCallback);
 }
 
-bool ccli::parseArgs(const int aArgc, char* const aArgv[])
+void ccli::parseArgs(const int aArgc, char* const aArgv[])
 {
 	std::deque<std::string> args;
 	for (int i = 0; i < aArgc; i++) {
@@ -155,8 +155,7 @@ bool ccli::parseArgs(const int aArgc, char* const aArgv[])
 			args.pop_front();
 		}
 	}
-
-	bool error = false;
+	
 	var_base* var = nullptr;
 	while (!args.empty()) {
 		const auto& arg = args.front();
@@ -175,7 +174,6 @@ bool ccli::parseArgs(const int aArgc, char* const aArgv[])
 		}
 		args.pop_front();
 	}
-	return error;
 }
 
 void ccli::loadConfig(const std::string& aCfgFile)
@@ -278,8 +276,8 @@ void ccli::printHelp()
 /*
 ** var_base
 */
-ccli::var_base::var_base(std::string aLongName, std::string aShortName, std::string aDescription, bool aSingleBool,
-	const bool aHasCallback):
+ccli::var_base::var_base(std::string aLongName, std::string aShortName, 
+	std::string aDescription, bool aSingleBool, const bool aHasCallback):
 	mLongName(std::move(aLongName)), mShortName(std::move(aShortName)),
 	mDescription(std::move(aDescription)), mSingleBool(aSingleBool), mHasCallback(aHasCallback), mLocked(false)
 {

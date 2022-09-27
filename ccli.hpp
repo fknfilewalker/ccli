@@ -9,7 +9,7 @@ class ccli
 {
 public:
 	static void						setWarningLogCallback(const std::function<void(const std::string&)>& aCallback = {});
-	static bool						parseArgs(int aArgc, char* const aArgv[]);
+	static void						parseArgs(int aArgc, char* const aArgv[]);
 	static void						loadConfig(const std::string& aCfgFile);
 	static void						writeConfig(const std::string& aCfgFile);
 	static void						executeCallbacks();
@@ -28,8 +28,12 @@ public:
 	{
 	public:
 									var_base(std::string aLongName, std::string aShortName, std::string aDescription, bool aSingleBool, bool aHasCallback);
-
 		virtual						~var_base();
+									
+									var_base(const var_base&) = delete;
+									var_base(var_base&&) = delete;
+		var_base&					operator=(const var_base&) = delete;
+		var_base&					operator=(var_base&&) = delete;
 
 		const std::string&			getLongName() const;
 		const std::string&			getShortName() const;
@@ -73,8 +77,12 @@ public:
 								const std::array<T, S>& aValue = {}, const std::function<void(const std::array<T, S>&)> aCallback = {})
 								: var_base(aLongName, aShortName, aDescription, std::is_same_v<T, bool> && S == 1, aCallback != nullptr),
 								mCallback(aCallback), mCallbackCharged(false), mValue(aValue) {}
-
 							~var() override = default;
+
+							var(const var&) = delete;
+							var(var&&) = delete;
+		var&				operator=(const var&) = delete;
+		var&				operator=(var&&) = delete;
 
 		std::array<T, S>&	getValue() { return mValue; }
 		void				setValue(const std::array<T, S>& aValue)
