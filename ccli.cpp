@@ -165,12 +165,12 @@ bool ccli::parseArgs(const int aArgc, char* const aArgv[])
 		if (shortName || longName) {
 			if (longName) var = findVarByLongName(arg.substr(2));
 			else if (shortName) var = findVarByShortName(arg.substr(1));
-			if (var && var->isSingleBool()) var->setValueString("");
+			if (var && var->isSingleBool()) var->setValueStringInternal("");
 			if (var == nullptr) log::warning("warning: '" + arg + "' not found");
 		}
 		// var found
 		else if (var) {
-			var->setValueString(arg);
+			var->setValueStringInternal(arg);
 			var = nullptr;
 		}
 		args.pop_front();

@@ -5,19 +5,20 @@
 #include <functional>
 #include <sstream>
 
-namespace ccli
+class ccli
 {
-	void							setWarningLogCallback(const std::function<void(const std::string&)>& aCallback = {});
-	bool							parseArgs(int aArgc, char* const aArgv[]);
-	void							loadConfig(const std::string& aCfgFile);
-	void							writeConfig(const std::string& aCfgFile);
-	void							executeCallbacks();
-	void							printHelp();
+public:
+	static void						setWarningLogCallback(const std::function<void(const std::string&)>& aCallback = {});
+	static bool						parseArgs(int aArgc, char* const aArgv[]);
+	static void						loadConfig(const std::string& aCfgFile);
+	static void						writeConfig(const std::string& aCfgFile);
+	static void						executeCallbacks();
+	static void						printHelp();
 
 	enum Flag {
 		NONE						= (0 << 0),
-		INIT						= (1 << 0),	// can only be set through parseArgs
-		ROM							= (1 << 1),	// display only, cannot be changed at all
+		CLI_ONLY					= (1 << 0),	// can only be set through parseArgs
+		READ_ONLY					= (1 << 1),	// display only, cannot be changed at all
 		CONFIG_RD					= (1 << 2),	// load variable from config file
 		CONFIG_RDWR					= (3 << 2),	// load variable from config file and save changes back to config file
 		MANUAL_EXEC					= (1 << 4)	// execute callback only when executeCallback/executeCallbacks is called
@@ -34,21 +35,27 @@ namespace ccli
 		const std::string&			getShortName() const;
 		const std::string&			getDescription() const;
 
-		virtual void				setValueString(const std::string& aString) = 0;
 		virtual std::string			getValueString() = 0;
+		virtual void				setValueString(const std::string& aString) = 0;
 
 		bool						isSingleBool() const;
 
 		bool						hasCallback() const;
 		virtual bool				executeCallback() = 0;
 
+		virtual bool				isCliOnly() const = 0;
+		virtual bool				isReadOnly() const = 0;
 		virtual bool				isConfigRead() const = 0;
 		virtual bool				isConfigReadWrite() const = 0;
+		virtual bool				isCallbackAutoExecuted() const = 0;
 
 		bool						locked() const;
 		void						locked(bool aLocked);
 
 	protected:
+		virtual void				setValueStringInternal(const std::string& aString) = 0;
+
+		friend class ccli;
 		const std::string			mLongName;
 		const std::string			mShortName;
 		const std::string			mDescription;
@@ -72,12 +79,8 @@ namespace ccli
 		std::array<T, S>&	getValue() { return mValue; }
 		void				setValue(const std::array<T, S>& aValue)
 							{
-								if (mValue.size() == 0 || mLocked) return;
-								mValue = aValue;
-								if (hasCallback()) {
-									mCallbackCharged = true;
-									if (isCallbackAutoExecuted()) executeCallback();
-								}
+								if (isCliOnly()) return;
+								setValueInternal(aValue);
 							}
 
 		void				chargeCallback() { mCallbackCharged = true; }
@@ -91,14 +94,42 @@ namespace ccli
 								return false;
 							}
 
+		bool				isCliOnly() const override { return F & CLI_ONLY; }
+		bool				isReadOnly() const override { return F & READ_ONLY; }
 		bool				isConfigRead() const override { return !mLongName.empty() && F & CONFIG_RD; }
 		bool				isConfigReadWrite() const override { return !mLongName.empty() && F & CONFIG_RDWR; }
-		bool				isCallbackAutoExecuted() const { return !(F & MANUAL_EXEC); }
+		bool				isCallbackAutoExecuted() const override { return !(F & MANUAL_EXEC); }
 		bool				isCallbackCharged() const { return mCallbackCharged; }
 
 		void				setValueString(const std::string& aString) override
 							{
-								if (mLocked) return;
+								if (isCliOnly()) return;
+								setValueStringInternal(aString);
+							}
+		std::string			getValueString() override
+							{
+								std::string s;
+								for(const T& v : mValue)
+								{
+									if (!s.empty()) s += mDelimiter;
+									if constexpr (std::is_same_v<T, std::string>) s += v;
+									else s += std::to_string(v);
+								}
+								return s;
+							}
+	private:
+		void				setValueInternal(const std::array<T, S>& aValue)
+							{
+								if (mLocked || isReadOnly()) return;
+								mValue = aValue;
+								if (hasCallback()) {
+									mCallbackCharged = true;
+									if (isCallbackAutoExecuted()) executeCallback();
+								}
+							}
+		void				setValueStringInternal(const std::string& aString) override
+							{
+								if (mLocked || isReadOnly()) return;
 								// empty string only allowed for bool and string
 								if constexpr (!std::is_same_v<T, bool> && !std::is_same_v<T, std::string>) if (aString.empty()) return;
 
@@ -125,25 +156,14 @@ namespace ccli
 									}
 									count++;
 								} while (pos != std::string::npos);
-			
+
 								mCallbackCharged = true;
 								if (isCallbackAutoExecuted()) executeCallback();
 							}
-		std::string			getValueString() override
-							{
-								std::string s;
-								for(const T& v : mValue)
-								{
-									if (!s.empty()) s += mDelimiter;
-									if constexpr (std::is_same_v<T, std::string>) s += v;
-									else s += std::to_string(v);
-								}
-								return s;
-							}
-	private:
+
 		const std::string	mDelimiter = ",";
 		const std::function<void(const std::array<T, S>&)> mCallback;
 		bool				mCallbackCharged;
 		std::array<T, S>	mValue;
 	};
-}
+};
