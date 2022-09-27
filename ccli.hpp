@@ -28,16 +28,17 @@ SOFTWARE.
 #include <array>
 #include <functional>
 #include <sstream>
+#include <deque>
 
 class ccli
 {
 public:
-	static void						setWarningLogCallback(const std::function<void(const std::string&)>& aCallback = {});
 	static void						parseArgs(int aArgc, char* const aArgv[]);
 	static void						loadConfig(const std::string& aCfgFile);
 	static void						writeConfig(const std::string& aCfgFile);
 	static void						executeCallbacks();
-	static void						printHelp();
+	static std::deque<std::string>	getHelp();
+	static std::deque<std::string>  checkErrors();
 
 	enum Flag {
 		NONE						= (0 << 0),

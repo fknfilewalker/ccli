@@ -31,7 +31,6 @@ SOFTWARE.
 #include <deque>
 #include <fstream>
 #include <filesystem>
-#include <iostream>
 
 constexpr char configDelimiter = '=';
 constexpr uint32_t helpColumnWidthShort = 20;
@@ -39,17 +38,13 @@ constexpr uint32_t helpColumnWidthLong = 20;
 
 namespace {
 	/*
-	** vars
+	** errors
 	*/
-	namespace log {
-		std::function<void(const std::string&)> funcWarning(const std::function<void(const std::string&)>& aCallback = {})
-		{
-			static std::function<void(const std::string&)> func = [](const std::string& aString) { std::cout << aString << std::endl; };
-			if (aCallback) func = aCallback;
-			return func;
-		}
-		void warning(const std::string& aString) { funcWarning()(aString); }
-	};
+	std::deque<std::string>& getErrorDeque()
+	{
+		static std::deque<std::string> deque;
+		return deque;
+	}
 	/*
 	** vars
 	*/
@@ -84,11 +79,11 @@ namespace {
 		std::map<std::string, ccli::var_base*>& mapShort = getShortNameVarMap();
 		if (!aLongName.empty()) {
 			const bool inserted = mapLong.insert(std::pair<std::string, ccli::var_base*>(aLongName, aVar)).second;
-			if (!inserted) log::warning("Long identifier '--" + aLongName + "' already exists");
+			if (!inserted) getErrorDeque().emplace_back("Long identifier '--" + aLongName + "' already exists");
 		}
 		if (!aShortName.empty()) {
 			const bool inserted = mapShort.insert(std::pair<std::string, ccli::var_base*>(aShortName, aVar)).second;
-			if (!inserted) log::warning("Short identifier '-" + aShortName + "' already exists");
+			if (!inserted) getErrorDeque().emplace_back("Short identifier '-" + aShortName + "' already exists");
 		}
 	}
 	void removeFromVarList(const std::string& aLongName, const std::string& aShortName, const ccli::var_base* const aVar)
@@ -153,18 +148,13 @@ namespace {
 	{
 		std::ofstream file(aFilename, std::ios::out | std::ios::binary);
 		if (!file.is_open()) {
-			log::warning("Could not open file '" + aFilename + "' for writing");
+			getErrorDeque().emplace_back("Could not open file '" + aFilename + "' for writing");
 			return false;
 		}
 		file.write(aContent.c_str(), static_cast<std::streamsize>(aContent.size()));
 		file.close();
 		return true;
 	}
-}
-
-void ccli::setWarningLogCallback(const std::function<void(const std::string&)>& aCallback)
-{
-	log::funcWarning(aCallback);
 }
 
 void ccli::parseArgs(const int aArgc, char* const aArgv[])
@@ -189,7 +179,7 @@ void ccli::parseArgs(const int aArgc, char* const aArgv[])
 			if (longName) var = findVarByLongName(arg.substr(2));
 			else if (shortName) var = findVarByShortName(arg.substr(1));
 			if (var && var->isSingleBool()) var->setValueStringInternal("");
-			if (var == nullptr) log::warning("warning: '" + arg + "' not found");
+			if (var == nullptr) getErrorDeque().emplace_back("'" + arg + "' not found");
 		}
 		// var found
 		else if (var) {
@@ -262,8 +252,9 @@ void ccli::executeCallbacks()
 	}
 }
 
-void ccli::printHelp()
+std::deque<std::string> ccli::getHelp()
 {
+	std::deque<std::string> help;
 	const std::map<std::string, ccli::var_base*>& mapLong = getLongNameVarMap();
 	const std::map<std::string, ccli::var_base*>& mapShort = getShortNameVarMap();
 
@@ -273,12 +264,12 @@ void ccli::printHelp()
 		//if(!var.second->getLongName().empty()) s += " | --" + var.second->getLongName();
 		if (s.size() > helpColumnWidthShort)
 		{
-			log::warning(s);
+			help.push_back(s);
 			s.clear();
 		}
 		s += std::string(helpColumnWidthShort - s.size(), ' ');
 		s += var.second->getDescription();
-		log::warning(s);
+		help.push_back(s);
 	}
 	for (const auto& var : mapLong)
 	{
@@ -287,14 +278,23 @@ void ccli::printHelp()
 			std::string s = "  --" + var.second->getLongName();
 			if (s.size() > helpColumnWidthLong)
 			{
-				log::warning(s);
+				help.push_back(s);
 				s.clear();
 			}
 			s += std::string(helpColumnWidthLong - s.size(), ' ');
 			s += var.second->getDescription();
-			log::warning(s);
+			help.push_back(s);
 		}
 	}
+	return help;
+}
+
+std::deque<std::string> ccli::checkErrors()
+{
+	std::deque<std::string>& deque = getErrorDeque();
+	std::deque<std::string> out = deque;
+	deque.clear();
+	return out;
 }
 
 /*

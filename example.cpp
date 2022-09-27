@@ -1,10 +1,8 @@
-
 #include "ccli.hpp"
 #include <iostream>
 
-
 ccli::var<float, 2, ccli::CONFIG_RDWR> var_test("test", "t", "Just a test", { 100,100 });
-ccli::var<float, 2, ccli::CONFIG_RDWR> var_test2("hallo", "", "Hallo", { 100,100 });
+ccli::var<float, 2, ccli::CONFIG_RDWR> var_test2("test", "", "Hallo", { 100,100 });
 
 void print(const std::array<float, 2> aValue)
 {
@@ -23,6 +21,7 @@ int main(int argc, char* argv[]) {
 	ccli::parseArgs(argc, argv);
 	ccli::loadConfig("test.cfg");
 	ccli::writeConfig("test.cfg");
-	ccli::printHelp();
+	for (const std::string& s : ccli::checkErrors()) std::cout << s << std::endl;
+	for (const std::string& s : ccli::getHelp()) std::cout << s << std::endl;
 	return 0;
 }
