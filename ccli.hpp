@@ -78,6 +78,11 @@ public:
 		virtual bool				isConfigReadWrite() const = 0;
 		virtual bool				isCallbackAutoExecuted() const = 0;
 
+		virtual bool				isBool() const = 0;
+		virtual bool				isInt() const = 0;
+		virtual bool				isFloat() const = 0;
+		virtual bool				isString() const = 0;
+
 		bool						locked() const;
 		void						locked(bool aLocked);
 
@@ -133,6 +138,11 @@ public:
 		bool				isConfigReadWrite() const override { return !mLongName.empty() && F & CONFIG_RDWR; }
 		bool				isCallbackAutoExecuted() const override { return !(F & MANUAL_EXEC); }
 		bool				isCallbackCharged() const { return mCallbackCharged; }
+
+		bool				isBool() const override { return std::is_same_v<T, bool>; }
+		bool				isInt() const override { return std::is_same_v<T, int>; }
+		bool				isFloat() const override { return std::is_same_v<T, float>; }
+		bool				isString() const override { return std::is_same_v<T, std::string>; }
 
 		void				setValueString(const std::string& aString) override
 							{
