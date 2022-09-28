@@ -177,7 +177,7 @@ void ccli::parseArgs(const int aArgc, const char* const aArgv[])
 		const bool longName = arg.size() >= 2 ? shortName && arg[1] == '-' : false;
 		if (shortName || longName) {
 			// arg without value (cleared otherwise)
-			if (var && var->isSingleBool()) var->setValueStringInternal("");
+			if (var && var->isBool() && var->size() == 1) var->setValueStringInternal("");
 			// find new arg
 			if (longName) var = findVarByLongName(arg.substr(2));
 			else if (shortName) var = findVarByShortName(arg.substr(1));
@@ -192,7 +192,7 @@ void ccli::parseArgs(const int aArgc, const char* const aArgv[])
 		args.pop_front();
 	}
 	// var is last argument
-	if (var && var->isSingleBool()) var->setValueStringInternal("");
+	if (var && var->isBool() && var->size() == 1) var->setValueStringInternal("");
 }
 
 void ccli::loadConfig(const std::string& aCfgFile)
@@ -306,9 +306,9 @@ std::deque<std::string> ccli::checkErrors()
 ** var_base
 */
 ccli::var_base::var_base(std::string aLongName, std::string aShortName, 
-	std::string aDescription, bool aSingleBool, const bool aHasCallback):
+	std::string aDescription, const bool aHasCallback):
 	mLongName(std::move(aLongName)), mShortName(std::move(aShortName)),
-	mDescription(std::move(aDescription)), mSingleBool(aSingleBool), mHasCallback(aHasCallback), mLocked(false)
+	mDescription(std::move(aDescription)), mHasCallback(aHasCallback), mLocked(false)
 {
 	assert(!mLongName.empty() || !mShortName.empty());
 	addToVarList(mLongName, mShortName, this);
@@ -329,9 +329,6 @@ const std::string& ccli::var_base::getShortName() const
 
 const std::string& ccli::var_base::getDescription() const
 { return mDescription; }
-
-bool ccli::var_base::isSingleBool() const
-{ return mSingleBool; }
 
 bool ccli::var_base::hasCallback() const
 { return mHasCallback; }

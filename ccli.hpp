@@ -52,7 +52,7 @@ public:
 	class var_base
 	{
 	public:
-									var_base(std::string aLongName, std::string aShortName, std::string aDescription, bool aSingleBool, bool aHasCallback);
+									var_base(std::string aLongName, std::string aShortName, std::string aDescription, bool aHasCallback);
 		virtual						~var_base();
 									
 									var_base(const var_base&) = delete;
@@ -67,10 +67,10 @@ public:
 		virtual std::string			getValueString() = 0;
 		virtual void				setValueString(const std::string& aString) = 0;
 
-		bool						isSingleBool() const;
-
 		bool						hasCallback() const;
 		virtual bool				executeCallback() = 0;
+
+		virtual uint32_t			size() const = 0;
 
 		virtual bool				isCliOnly() const = 0;
 		virtual bool				isReadOnly() const = 0;
@@ -93,7 +93,6 @@ public:
 		const std::string			mLongName;
 		const std::string			mShortName;
 		const std::string			mDescription;
-		const bool					mSingleBool;
 		const bool					mHasCallback;
 		bool						mLocked;
 	};
@@ -105,7 +104,7 @@ public:
 	public:
 							var(const std::string& aLongName, const std::string& aShortName, const std::string& aDescription, 
 								const std::array<T, S>& aValue = {}, const std::function<void(const std::array<T, S>&)> aCallback = {})
-								: var_base(aLongName, aShortName, aDescription, std::is_same_v<T, bool> && S == 1, aCallback != nullptr),
+								: var_base(aLongName, aShortName, aDescription, aCallback != nullptr),
 								mCallback(aCallback), mCallbackCharged(false), mValue(aValue) {}
 							~var() override = default;
 
@@ -131,6 +130,8 @@ public:
 								}
 								return false;
 							}
+
+		uint32_t			size()const override { return mValue.size(); }
 
 		bool				isCliOnly() const override { return F & CLI_ONLY; }
 		bool				isReadOnly() const override { return F & READ_ONLY; }
