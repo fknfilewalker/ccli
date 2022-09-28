@@ -107,11 +107,18 @@ public:
 								const std::array<T, S>& aValue = {}, const std::function<void(const std::array<T, S>&)> aCallback = {})
 								: var_base(aLongName, aShortName, aDescription, aCallback != nullptr),
 								mCallback(aCallback), mCallbackCharged(false), mValue(aValue) {}
+
+							template <typename = std::enable_if_t<!std::is_same_v<T, std::string>>>
 							var(const std::string& aLongName, const std::string& aShortName, const std::string& aDescription,
 								const std::pair<std::array<T, S>, std::array<T, S>>& aLimits, const std::array<T, S>& aValue = {},
 								const std::function<void(const std::array<T, S>&)> aCallback = {})
 								: var_base(aLongName, aShortName, aDescription, aCallback != nullptr),
-								mCallback(aCallback), mCallbackCharged(false), mValue(aValue), mLimits(aLimits) {}
+								mCallback(aCallback), mCallbackCharged(false), mValue(aValue), mLimits(aLimits)
+							{
+								for(uint32_t i = 0; i < S; i++) {
+									if (mLimits->first[i] > mLimits->second[i]) std::swap(mLimits->first[i], mLimits->second[i]);
+								}
+							}
 							~var() override = default;
 
 							var(const var&) = delete;
