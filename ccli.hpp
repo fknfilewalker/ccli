@@ -33,7 +33,7 @@ SOFTWARE.
 class ccli
 {
 public:
-	static void						parseArgs(int aArgc, char* const aArgv[]);
+	static void						parseArgs(int aArgc, const char* const aArgv[]);
 	static void						loadConfig(const std::string& aCfgFile);
 	static void						writeConfig(const std::string& aCfgFile);
 	static void						executeCallbacks();

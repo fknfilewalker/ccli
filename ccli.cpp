@@ -157,7 +157,7 @@ namespace {
 	}
 }
 
-void ccli::parseArgs(const int aArgc, char* const aArgv[])
+void ccli::parseArgs(const int aArgc, const char* const aArgv[])
 {
 	std::deque<std::string> args;
 	for (int i = 0; i < aArgc; i++) {
