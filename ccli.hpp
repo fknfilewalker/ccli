@@ -29,6 +29,7 @@ SOFTWARE.
 #include <functional>
 #include <sstream>
 #include <deque>
+#include <optional>
 
 class ccli
 {
@@ -106,6 +107,11 @@ public:
 								const std::array<T, S>& aValue = {}, const std::function<void(const std::array<T, S>&)> aCallback = {})
 								: var_base(aLongName, aShortName, aDescription, aCallback != nullptr),
 								mCallback(aCallback), mCallbackCharged(false), mValue(aValue) {}
+							var(const std::string& aLongName, const std::string& aShortName, const std::string& aDescription,
+								const std::pair<std::array<T, S>, std::array<T, S>>& aLimits, const std::array<T, S>& aValue = {},
+								const std::function<void(const std::array<T, S>&)> aCallback = {})
+								: var_base(aLongName, aShortName, aDescription, aCallback != nullptr),
+								mCallback(aCallback), mCallbackCharged(false), mValue(aValue), mLimits(aLimits) {}
 							~var() override = default;
 
 							var(const var&) = delete;
@@ -202,6 +208,17 @@ public:
 									count++;
 								} while (pos != std::string::npos);
 
+								// check limits
+								if constexpr (!std::is_same_v<T, std::string>) {
+									if (mLimits.has_value()) {
+										for (uint32_t i = 0; i < size(); i++)
+										{
+											if (mValue[i] < mLimits.value().first[i]) mValue[i] = mLimits.value().first[i];
+											if (mValue[i] > mLimits.value().second[i]) mValue[i] = mLimits.value().second[i];
+										}
+									}
+								}
+
 								mCallbackCharged = true;
 								if (isCallbackAutoExecuted()) executeCallback();
 							}
@@ -210,5 +227,6 @@ public:
 		const std::function<void(const std::array<T, S>&)> mCallback;
 		bool				mCallbackCharged;
 		std::array<T, S>	mValue;
+		std::optional<std::pair<std::array<T, S >, std::array<T, S >>>	mLimits;
 	};
 };

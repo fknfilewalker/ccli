@@ -173,7 +173,7 @@ void ccli::parseArgs(const int aArgc, const char* const aArgv[])
 	var_base* var = nullptr;
 	while (!args.empty()) {
 		const auto& arg = args.front();
-		const bool shortName = !arg.empty() ? arg[0] == '-' : false;
+		const bool shortName = arg.size() >= 2 ? arg[0] == '-' && isalpha(arg[1]) : false;
 		const bool longName = arg.size() >= 2 ? shortName && arg[1] == '-' : false;
 		if (shortName || longName) {
 			// arg without value (cleared otherwise)

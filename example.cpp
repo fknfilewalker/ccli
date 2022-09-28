@@ -84,6 +84,10 @@ void test2()
 
 int main(int argc, char* argv[]) {
 	test1();
+
+	ccli::var<float> float_var1("float1", "f1", "First bool var", { {-1},{1} });
+	ccli::parseArgs(argc, argv);
+	std::cout << float_var1.getValue()[0] << std::endl;
 	/*ccli::parseArgs(argc, argv);
 	ccli::loadConfig("test.cfg");
 	ccli::writeConfig("test.cfg");
