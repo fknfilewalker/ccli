@@ -176,9 +176,12 @@ void ccli::parseArgs(const int aArgc, char* const aArgv[])
 		const bool shortName = !arg.empty() ? arg[0] == '-' : false;
 		const bool longName = arg.size() >= 2 ? shortName && arg[1] == '-' : false;
 		if (shortName || longName) {
+			// arg without value (cleared otherwise)
+			if (var && var->isSingleBool()) var->setValueStringInternal("");
+			// find new arg
 			if (longName) var = findVarByLongName(arg.substr(2));
 			else if (shortName) var = findVarByShortName(arg.substr(1));
-			if (var && var->isSingleBool()) var->setValueStringInternal("");
+			// error if not found
 			if (var == nullptr) getErrorDeque().emplace_back("'" + arg + "' not found");
 		}
 		// var found
@@ -188,6 +191,8 @@ void ccli::parseArgs(const int aArgc, char* const aArgv[])
 		}
 		args.pop_front();
 	}
+	// var is last argument
+	if (var && var->isSingleBool()) var->setValueStringInternal("");
 }
 
 void ccli::loadConfig(const std::string& aCfgFile)

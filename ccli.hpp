@@ -192,9 +192,10 @@ public:
 									else if constexpr (std::is_same_v<T, bool>) {
 										if (token.empty()) mValue.at(count) = true;
 										else {
-											bool b;
-											std::istringstream(token) >> std::boolalpha >> b;
-											mValue.at(count) = b;
+											bool bn, bs;
+											std::istringstream(token) >> bn;
+											std::istringstream(token) >> std::boolalpha >> bs;
+											mValue[count] = bn || bs;
 										}
 									}
 									count++;
