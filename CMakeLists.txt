@@ -49,7 +49,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/_bin/Release")
 
 # PROJECT
 project(ccli)
-file(GLOB SOURCES "*.cpp")
 # .h
 file(GLOB HEADERS "*.h" "*.hpp")
 # .c/.cpp
