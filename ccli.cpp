@@ -336,6 +336,21 @@ const std::string& ccli::var_base::getDescription() const
 bool ccli::var_base::hasCallback() const
 { return mHasCallback; }
 
+bool ccli::var_base::isCliOnly() const
+{ return mFlags & CLI_ONLY; }
+
+bool ccli::var_base::isReadOnly() const
+{ return mFlags & READ_ONLY; }
+
+bool ccli::var_base::isConfigRead() const
+{ return !mLongName.empty() && mFlags & CONFIG_RD; }
+
+bool ccli::var_base::isConfigReadWrite() const
+{ return !mLongName.empty() && mFlags & CONFIG_RDWR; }
+
+bool ccli::var_base::isCallbackAutoExecuted() const
+{ return !(mFlags & MANUAL_EXEC); }
+
 bool ccli::var_base::locked() const
 { return mLocked; }
 

@@ -74,11 +74,11 @@ public:
 
 		virtual size_t				size() const = 0;
 
-		bool						isCliOnly() const { return mFlags & CLI_ONLY; }
-		bool						isReadOnly() const { return mFlags & READ_ONLY; }
-		bool						isConfigRead() const { return !mLongName.empty() && mFlags & CONFIG_RD; }
-		bool						isConfigReadWrite() const { return !mLongName.empty() && mFlags & CONFIG_RDWR; }
-		bool						isCallbackAutoExecuted() const { return !(mFlags & MANUAL_EXEC); }
+		bool						isCliOnly() const;
+		bool						isReadOnly() const;
+		bool						isConfigRead() const;
+		bool						isConfigReadWrite() const;
+		bool						isCallbackAutoExecuted() const;
 
 		virtual bool				isBool() const = 0;
 		virtual bool				isInt() const = 0;
