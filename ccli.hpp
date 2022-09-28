@@ -70,7 +70,7 @@ public:
 		bool						hasCallback() const;
 		virtual bool				executeCallback() = 0;
 
-		virtual uint32_t			size() const = 0;
+		virtual size_t				size() const = 0;
 
 		virtual bool				isCliOnly() const = 0;
 		virtual bool				isReadOnly() const = 0;
@@ -131,7 +131,7 @@ public:
 								return false;
 							}
 
-		uint32_t			size()const override { return mValue.size(); }
+		size_t				size()const override { return mValue.size(); }
 
 		bool				isCliOnly() const override { return F & CLI_ONLY; }
 		bool				isReadOnly() const override { return F & READ_ONLY; }
