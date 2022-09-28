@@ -305,14 +305,17 @@ std::deque<std::string> ccli::checkErrors()
 /*
 ** var_base
 */
-ccli::var_base::var_base(std::string aShortName, std::string aLongName,
+ccli::var_base::var_base(std::string aShortName, std::string aLongName, uint32_t aFlags,
 	std::string aDescription, const bool aHasCallback) :
 	mShortName(std::move(aShortName)), mLongName(std::move(aLongName)),
-	mDescription(std::move(aDescription)), mHasCallback(aHasCallback), mLocked(false)
+	mDescription(std::move(aDescription)), mFlags(aFlags), mHasCallback(aHasCallback), mLocked(false)
 {
 	assert(!mLongName.empty() || !mShortName.empty());
 	addToVarList(mLongName, mShortName, this);
 	if(mHasCallback) addToCallbackSet(this);
+	/*if (mLongName.empty() && (isConfigRead() || isConfigReadWrite())) {
+		getErrorDeque().emplace_back("Config requieres long name \"\'-" + mShortName + "\'");
+	}*/
 }
 
 ccli::var_base::~var_base()

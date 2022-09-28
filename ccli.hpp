@@ -53,7 +53,8 @@ public:
 	class var_base
 	{
 	public:
-									var_base(std::string aShortName, std::string aLongName, std::string aDescription, bool aHasCallback);
+									var_base(std::string aShortName, std::string aLongName, uint32_t aFlags, 
+												std::string aDescription, bool aHasCallback);
 		virtual						~var_base();
 									
 									var_base(const var_base&) = delete;
@@ -73,11 +74,11 @@ public:
 
 		virtual size_t				size() const = 0;
 
-		virtual bool				isCliOnly() const = 0;
-		virtual bool				isReadOnly() const = 0;
-		virtual bool				isConfigRead() const = 0;
-		virtual bool				isConfigReadWrite() const = 0;
-		virtual bool				isCallbackAutoExecuted() const = 0;
+		bool						isCliOnly() const { return mFlags & CLI_ONLY; }
+		bool						isReadOnly() const { return mFlags & READ_ONLY; }
+		bool						isConfigRead() const { return !mLongName.empty() && mFlags & CONFIG_RD; }
+		bool						isConfigReadWrite() const { return !mLongName.empty() && mFlags & CONFIG_RDWR; }
+		bool						isCallbackAutoExecuted() const { return !(mFlags & MANUAL_EXEC); }
 
 		virtual bool				isBool() const = 0;
 		virtual bool				isInt() const = 0;
@@ -94,25 +95,27 @@ public:
 		const std::string			mShortName;
 		const std::string			mLongName;
 		const std::string			mDescription;
+		const uint32_t				mFlags;
 		const bool					mHasCallback;
 		bool						mLocked;
 	};
 
-	template <class T, size_t S = 1, uint32_t F = NONE>
+	template <class T, size_t S = 1>
 	class var final : public var_base {
 		static_assert(std::is_same_v<T, int> || std::is_same_v<T, float> || std::is_same_v<T, bool> || std::is_same_v<T, std::string>, "Type must be bool, int, float or string");
 		static_assert(S >= 1, "Size must be larger 0");
 	public:
-							var(const std::string& aShortName, const std::string& aLongName, const std::string& aDescription,
-								const std::array<T, S>& aValue = {}, const std::function<void(const std::array<T, S>&)> aCallback = {})
-								: var_base(aShortName, aLongName, aDescription, aCallback != nullptr),
-								mCallback(aCallback), mCallbackCharged(false), mValue(aValue) {}
+							var(const std::string& aShortName, const std::string& aLongName, const std::array<T, S>& aValue = {}, 
+								uint32_t aFlags = NONE, const std::string& aDescription = {},
+								const std::function<void(const std::array<T, S>&)> aCallback = {})
+									: var_base(aShortName, aLongName, aFlags, aDescription, aCallback != nullptr),
+									mCallback(aCallback), mCallbackCharged(false), mValue(aValue) {}
 
 							template <typename = std::enable_if_t<!std::is_same_v<T, std::string>>>
-							var(const std::string& aShortName, const std::string& aLongName, const std::string& aDescription,
-								const std::pair<std::array<T, S>, std::array<T, S>>& aLimits, const std::array<T, S>& aValue = {},
-								const std::function<void(const std::array<T, S>&)> aCallback = {})
-								: var_base(aShortName, aLongName, aDescription, aCallback != nullptr),
+							var(const std::string& aShortName, const std::string& aLongName, const std::pair<std::array<T, S>, std::array<T, S>>& aLimits, 
+								const std::array<T, S>& aValue = {}, uint32_t aFlags = NONE,
+								const std::string& aDescription = {}, const std::function<void(const std::array<T, S>&)> aCallback = {})
+								: var_base(aShortName, aLongName, aFlags, aDescription, aCallback != nullptr),
 								mCallback(aCallback), mCallbackCharged(false), mValue(aValue), mLimits(aLimits)
 							{
 								for(uint32_t i = 0; i < S; i++) {
@@ -146,11 +149,6 @@ public:
 
 		size_t				size()const override { return mValue.size(); }
 
-		bool				isCliOnly() const override { return F & CLI_ONLY; }
-		bool				isReadOnly() const override { return F & READ_ONLY; }
-		bool				isConfigRead() const override { return !mLongName.empty() && F & CONFIG_RD; }
-		bool				isConfigReadWrite() const override { return !mLongName.empty() && F & CONFIG_RDWR; }
-		bool				isCallbackAutoExecuted() const override { return !(F & MANUAL_EXEC); }
 		bool				isCallbackCharged() const { return mCallbackCharged; }
 
 		bool				isBool() const override { return std::is_same_v<T, bool>; }

@@ -22,10 +22,10 @@ void test1()
 {
 	std::cout << "<Test 1 type=\"bool test\">" << std::endl;
 	// args
-	ccli::var<bool> bool_var1("b1", "bool1", "First bool var");
-	ccli::var<bool> bool_var2("b2", "bool2", "Second bool var");
-	ccli::var<bool> bool_var3("b3", "bool3", "Third bool var", { true });
-	ccli::var<bool> bool_var4("b4", "bool4", "Fourth bool var", { 1 });
+	ccli::var<bool> bool_var1("b1", "bool1", { 0 }, ccli::NONE, "First bool var");
+	ccli::var<bool> bool_var2("b2", "bool2", { false }, ccli::NONE, "Second bool var");
+	ccli::var<bool> bool_var3("b3", "bool3", { 1 }, ccli::NONE, "Third bool var");
+	ccli::var<bool> bool_var4("b4", "bool4", { true }, ccli::NONE, "Fourth bool var");
 
 	std::cout << "\t<args> no args (defaults) </args>" << std::endl;
 	std::cout << "\tbool_var1 is " << bool_var1.getValue()[0] << " should be " << false << std::endl;
@@ -85,14 +85,15 @@ void test2()
 int main(int argc, char* argv[]) {
 	test1();
 
-	ccli::var<float> float_var1("f1", "float1", "First bool var", { {-1},{1} });
+	ccli::var<float> float_var1("f1", "float1", { {-1},{1} }, { 0 }, ccli::NONE, "First bool var");
+	ccli::var<float, 2> var_test("t", "test", { 100, 200 }, ccli::CONFIG_RDWR);
 	ccli::parseArgs(argc, argv);
-	std::cout << float_var1.getValue()[0] << std::endl;
-	/*ccli::parseArgs(argc, argv);
 	ccli::loadConfig("test.cfg");
+	var_test.setValue({ 200, 200 });
 	ccli::writeConfig("test.cfg");
-	std::cout << var_nix.getValue()[0] << " " << var_nix2.getValue()[0] << 
+	std::cout << float_var1.getValue()[0] << std::endl;
+	std::cout << var_test.getValue()[0] << std::endl;
 	for (const std::string& s : ccli::checkErrors()) std::cout << s << std::endl;
-	for (const std::string& s : ccli::getHelp()) std::cout << s << std::endl;*/
+
 	return 0;
 }
