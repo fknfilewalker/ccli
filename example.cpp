@@ -22,10 +22,10 @@ void test1()
 {
 	std::cout << "<Test 1 type=\"bool test\">" << std::endl;
 	// args
-	ccli::var<bool> bool_var1("bool1", "b1", "First bool var");
-	ccli::var<bool> bool_var2("bool2", "b2", "Second bool var");
-	ccli::var<bool> bool_var3("bool3", "b3", "Third bool var", { true });
-	ccli::var<bool> bool_var4("bool4", "b4", "Fourth bool var", { 1 });
+	ccli::var<bool> bool_var1("b1", "bool1", "First bool var");
+	ccli::var<bool> bool_var2("b2", "bool2", "Second bool var");
+	ccli::var<bool> bool_var3("b3", "bool3", "Third bool var", { true });
+	ccli::var<bool> bool_var4("b4", "bool4", "Fourth bool var", { 1 });
 
 	std::cout << "\t<args> no args (defaults) </args>" << std::endl;
 	std::cout << "\tbool_var1 is " << bool_var1.getValue()[0] << " should be " << false << std::endl;
@@ -85,7 +85,7 @@ void test2()
 int main(int argc, char* argv[]) {
 	test1();
 
-	ccli::var<float> float_var1("float1", "f1", "First bool var", { {-1},{1} });
+	ccli::var<float> float_var1("f1", "float1", "First bool var", { {-1},{1} });
 	ccli::parseArgs(argc, argv);
 	std::cout << float_var1.getValue()[0] << std::endl;
 	/*ccli::parseArgs(argc, argv);

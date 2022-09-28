@@ -305,9 +305,9 @@ std::deque<std::string> ccli::checkErrors()
 /*
 ** var_base
 */
-ccli::var_base::var_base(std::string aLongName, std::string aShortName, 
-	std::string aDescription, const bool aHasCallback):
-	mLongName(std::move(aLongName)), mShortName(std::move(aShortName)),
+ccli::var_base::var_base(std::string aShortName, std::string aLongName,
+	std::string aDescription, const bool aHasCallback) :
+	mShortName(std::move(aShortName)), mLongName(std::move(aLongName)),
 	mDescription(std::move(aDescription)), mHasCallback(aHasCallback), mLocked(false)
 {
 	assert(!mLongName.empty() || !mShortName.empty());
