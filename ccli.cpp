@@ -313,10 +313,10 @@ ccli::IterationDecision ccli::forEachVar(const std::function<IterationDecision(v
 /*
 ** var_base
 */
-ccli::var_base::var_base(std::string aShortName, std::string aLongName, uint32_t aFlags,
-                         std::string aDescription, const bool aHasCallback) :
-	mShortName(std::move(aShortName)), mLongName(std::move(aLongName)),
-	mDescription(std::move(aDescription)), mFlags(aFlags), mHasCallback(aHasCallback), mLocked(false)
+ccli::var_base::var_base(const std::string_view aShortName, const std::string_view aLongName, const uint32_t aFlags,
+	const std::string_view aDescription, const bool aHasCallback) :
+	mShortName{ aShortName }, mLongName{ aLongName },
+	mDescription{ aDescription }, mFlags{ aFlags }, mHasCallback{ aHasCallback }, mLocked{ false }
 {
 	assert(!mLongName.empty() || !mShortName.empty());
 	addToVarList(mLongName, mShortName, this);
