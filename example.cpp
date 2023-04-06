@@ -85,7 +85,9 @@ void test2()
 int main(int argc, char* argv[]) {
 	test1();
 
-	ccli::var<float> float_var1("f1", "float1", { {-1},{1} }, { 0 }, ccli::NONE, "First bool var");
+
+	ccli::var<float, 4, ccli::Limits> float_var1("f1", "float1", { {-1, -2, -3, -4}, {1, 2, 3, 4} }, {0}, ccli::NONE, "First bool var");
+	ccli::var<float, 4> float_var2("f2", "float2", {0}, ccli::NONE, "First bool var");
 	ccli::var<float, 2> var_test("t", "test", { 100, 200 }, ccli::CONFIG_RDWR);
 	ccli::parseArgs(argc, argv);
 	ccli::loadConfig("test.cfg");
@@ -94,6 +96,9 @@ int main(int argc, char* argv[]) {
 	std::cout << float_var1.getValue()[0] << std::endl;
 	std::cout << var_test.getValue()[0] << std::endl;
 	for (const std::string& s : ccli::checkErrors()) std::cout << s << std::endl;
+
+	std::cout << "Sizeof float_var1: " << sizeof(float_var1) << std::endl;
+	std::cout << "Sizeof float_var2: " << sizeof(float_var2) << std::endl;
 
 	return 0;
 }
