@@ -69,8 +69,8 @@ public:
 	class var_base
 	{
 	public:
-		var_base(std::string aShortName, std::string aLongName, uint32_t aFlags,
-		         std::string aDescription, bool aHasCallback);
+		var_base(std::string_view aShortName, std::string_view aLongName, uint32_t aFlags,
+		         std::string_view aDescription, bool aHasCallback);
 		virtual ~var_base();
 
 		var_base(const var_base&) = delete;
@@ -83,7 +83,7 @@ public:
 		[[nodiscard]] const std::string& getDescription() const;
 
 		virtual std::string getValueString() = 0;
-		virtual void setValueString(const std::string& aString) = 0;
+		virtual void setValueString(std::string_view aString) = 0;
 
 		[[nodiscard]] bool hasCallback() const;
 		virtual bool executeCallback() = 0;
@@ -105,7 +105,7 @@ public:
 		void locked(bool aLocked);
 
 	protected:
-		virtual void setValueStringInternal(const std::string& aString) = 0;
+		virtual void setValueStringInternal(std::string_view aString) = 0;
 
 		static long long parseIntegral(std::string_view);
 		static double parseDouble(std::string_view);
@@ -154,13 +154,8 @@ public:
 		VariableSizedData() = default;
 
 		template <typename U, typename = std::enable_if_t<std::is_same_v<TData, std::string>>>
-		VariableSizedData(const U& d) : mData{d}
-		{
-		}
-
-		VariableSizedData(const TData& d) : mData{d}
-		{
-		}
+		VariableSizedData(const U& d) : mData{d} {}
+		VariableSizedData(const TData& d) : mData{d} {}
 
 		TData mData;
 
@@ -185,16 +180,13 @@ public:
 		static_assert((!std::is_same_v<TData, std::string> && !std::is_same_v<TData, bool>) || sizeof...(TLimits) == 0,
 			"String and boolean values may not have limits");
 
-		var(const std::string& aShortName, const std::string& aLongName, const TStorage& aValue = {},
-		    uint32_t aFlags = NONE, const std::string& aDescription = {},
+		var(const std::string_view aShortName, const std::string_view aLongName, const TStorage& aValue = {},
+		    const uint32_t aFlags = NONE, const std::string_view aDescription = {},
 		    const std::function<void(const std::array<TData, S>&)> aCallback = {})
 			: var_base(aShortName, aLongName, aFlags, aDescription, aCallback != nullptr),
-			  mCallback(aCallback), mCallbackCharged(false), mValue(aValue)
-		{
-		}
+				mCallback{ aCallback }, mCallbackCharged{ false }, mValue{ aValue } {}
 
 		~var() override = default;
-
 		var(const var&) = delete;
 		var(var&&) = delete;
 		var& operator=(const var&) = delete;
@@ -209,7 +201,6 @@ public:
 		}
 
 		void chargeCallback() { mCallbackCharged = true; }
-
 		bool executeCallback() override
 		{
 			if (hasCallback() && mCallbackCharged)
@@ -222,7 +213,6 @@ public:
 		}
 
 		[[nodiscard]] size_t size() const override { return mValue.size(); }
-
 		[[nodiscard]] bool isCallbackCharged() const { return mCallbackCharged; }
 
 		[[nodiscard]] bool isBool() const override { return std::is_same_v<TData, bool>; }
@@ -230,7 +220,7 @@ public:
 		[[nodiscard]] bool isFloat() const override { return std::is_floating_point_v<TData>; }
 		[[nodiscard]] bool isString() const override { return std::is_same_v<TData, std::string>; }
 
-		void setValueString(const std::string& aString) override
+		void setValueString(const std::string_view aString) override
 		{
 			if (isCliOnly()) return;
 			setValueStringInternal(aString);
@@ -280,7 +270,7 @@ public:
 			}
 		}
 
-		void setValueStringInternal(const std::string& aString) override
+		void setValueStringInternal(std::string_view aString) override
 		{
 			if (mLocked || isReadOnly()) return;
 			// empty string only allowed for bool and string
@@ -293,7 +283,7 @@ public:
 			do
 			{
 				pos = aString.find(mDelimiter, current);
-				std::string_view token = std::string_view{aString}.substr(current, pos - current);
+				std::string_view token = aString.substr(current, pos - current);
 				current = pos + 1;
 
 				if (count > mValue.size() - 1) break;
