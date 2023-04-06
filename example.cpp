@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
 	test1();
 
 
-	ccli::var<float, 4, ccli::Limits> float_var1("f1", "float1", { {-1, -2, -3, -4}, {1, 2, 3, 4} }, {0}, ccli::NONE, "First bool var");
+	ccli::var<float, 4, ccli::MaxLimit<1>, ccli::MinLimit<-1>> float_var1("f1", "float1", {0}, ccli::NONE, "First bool var");
 	ccli::var<float, 4> float_var2("f2", "float2", {0}, ccli::NONE, "First bool var");
 	ccli::var<float, 2> var_test("t", "test", { 100, 200 }, ccli::CONFIG_RDWR);
 	ccli::parseArgs(argc, argv);

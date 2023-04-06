@@ -115,39 +115,16 @@ public:
 		bool						mLocked;
 	};
 
-	template<typename T, size_t>
-	struct NoLimits {
-		void order() {}
-		T limit(size_t, T x) const { return x; }
-
-		static constexpr bool hasLimits = false;
+	template<long long Value>
+	struct MaxLimit {
+		template<typename T>
+		static T apply(T x) { return x > Value ? Value : x; }
 	};
 
-	template<typename TData, size_t S>
-	struct Limits {
-		Limits(const std::array<TData, S >& left, const std::array<TData, S >& right) : mValues{ left, right } {}
-
-		void order() {
-			for (uint32_t i = 0; i < S; i++) {
-				if (mValues.first[i] > mValues.second[i]) {
-					std::swap(mValues.first[i], mValues.second[i]);
-				}
-			}
-		}
-
-		TData limit(size_t idx, TData x) const {
-			if (x < mValues.first[idx]) {
-				return mValues.first[idx];
-			}
-			if (x > mValues.second[idx]) {
-				return mValues.second[idx];
-			}
-			return x;
-		}
-
-		static constexpr bool hasLimits = true;
-	private:
-		std::pair<std::array<TData, S >, std::array<TData, S >> mValues;
+	template<long long Value>
+	struct MinLimit {
+		template<typename T>
+		static T apply(T x) { return x < Value ? Value : x; }
 	};
 
 
@@ -184,14 +161,13 @@ public:
 	template <
 		typename TData,
 		size_t S = 1,
-		template<typename, size_t> class TLimits= NoLimits
+		typename ... TLimits
 	>
 	class var final : public var_base {
 	public:
-		using TLimitsData = TLimits<TData, S>;
 		using TStorage = VariableSizedData<TData, S>;
 		static_assert(std::is_same_v<TData, int> || std::is_same_v<TData, float> || std::is_same_v<TData, bool> || std::is_same_v<TData, std::string>, "Type must be bool, int, float or string");
-		static_assert(!std::is_same_v<TData, std::string> || !TLimitsData::hasLimits, "String value may not have limits");
+		static_assert((!std::is_same_v<TData, std::string> && !std::is_same_v<TData, bool>) || sizeof...(TLimits) == 0, "String and boolean values may not have limits");
 
 							var(const std::string& aShortName, const std::string& aLongName, const TStorage& aValue = {}, 
 								uint32_t aFlags = NONE, const std::string& aDescription = {},
@@ -199,15 +175,6 @@ public:
 									: var_base(aShortName, aLongName, aFlags, aDescription, aCallback != nullptr),
 									mCallback(aCallback), mCallbackCharged(false), mValue(aValue) {}
 
-							template <typename = std::enable_if_t<TLimitsData::hasLimits>>
-							var(const std::string& aShortName, const std::string& aLongName, const TLimitsData& aLimits, 
-								const TStorage& aValue = {}, uint32_t aFlags = NONE,
-								const std::string& aDescription = {}, const std::function<void(const std::array<TData, S>&)> aCallback = {})
-								: var_base(aShortName, aLongName, aFlags, aDescription, aCallback != nullptr),
-								mCallback(aCallback), mCallbackCharged(false), mValue(aValue), mLimits(aLimits)
-							{
-								mLimits.order();
-							}
 							~var() override = default;
 
 							var(const var&) = delete;
@@ -260,6 +227,20 @@ public:
 								return stream.str();
 							}
 	private:
+		template<typename ... TRest>
+		struct LimitApplier {
+			static auto apply(TData x) {
+				return x;
+			}
+		};
+
+		template<typename TLimit, typename ...TRest>
+		struct LimitApplier<TLimit, TRest...> {
+			static auto apply(TData x) {
+				return Applier<TRest...>::apply(TLimit::apply(x));
+			}
+		};
+
 		void				setValueInternal(const TStorage& aValue)
 							{
 								if (mLocked || isReadOnly()) return;
@@ -292,9 +273,11 @@ public:
 									count++;
 								} while (pos != std::string::npos);
 
-								for (uint32_t i = 0; i < size(); i++)
-								{
-									mValue.at(i) = mLimits.limit(i, mValue.at(i));
+								if constexpr (std::is_same_v<TData, float> || std::is_same_v<TData, int>) {
+									for (uint32_t i = 0; i < size(); i++)
+									{
+										mValue.at(i) = LimitApplier<TLimits...>::apply(mValue.at(i));
+									}
 								}
 
 								mCallbackCharged = true;
@@ -305,6 +288,5 @@ public:
 		const std::function<void(const std::array<TData, S>&)> mCallback;
 		bool		mCallbackCharged;
 		TStorage	mValue;
-		TLimitsData	mLimits;
 	};
 };
