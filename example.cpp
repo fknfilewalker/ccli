@@ -2,30 +2,30 @@
 #include <iostream>
 
 
-//ccli::var<float, 2, ccli::CONFIG_RDWR> var_test("test", "t", "Just a test", { 100,100 });
-//ccli::var<float, 2, ccli::CONFIG_RDWR> var_test2("test", "", "Hallo", { 100,100 });
+//ccli::Var<float, 2, ccli::CONFIG_RDWR> var_test("test", "t", "Just a test", { 100,100 });
+//ccli::Var<float, 2, ccli::CONFIG_RDWR> var_test2("test", "", "Hallo", { 100,100 });
 //
 //void print(const std::array<float, 2> aValue)
 //{
 //	std::cout << "Callback test: " << aValue[0] << " " << aValue[1] << std::endl;
 //}
-//ccli::var<float, 2> var_cbtest("cbtest", "cbt", "Just a test", { 100,100 }, print);
+//ccli::Var<float, 2> var_cbtest("cbtest", "cbt", "Just a test", { 100,100 }, print);
 //
-//ccli::var<float, 2> var_cbtestlambda("cbtestlambda", "cbtl", "Just a test", { 100,100 }, [](const std::array<float, 2> aValue) {
+//ccli::Var<float, 2> var_cbtestlambda("cbtestlambda", "cbtl", "Just a test", { 100,100 }, [](const std::array<float, 2> aValue) {
 //	std::cout << "Callback test: " << aValue[0] << " " << aValue[1] << std::endl;
 //	});
 //
-//ccli::var<bool> var_nix("", "nix", "Just a test", { });
-//ccli::var<bool> var_nix2("", "nix2", "Just a test", { });
+//ccli::Var<bool> var_nix("", "nix", "Just a test", { });
+//ccli::Var<bool> var_nix2("", "nix2", "Just a test", { });
 
 void test1()
 {
 	std::cout << "<Test 1 type=\"bool test\">" << std::endl;
 	// args
-	ccli::var<bool> bool_var1("b1", "bool1", 0, ccli::NONE, "First bool var");
-	ccli::var<bool> bool_var2("b2", "bool2", false, ccli::NONE, "Second bool var");
-	ccli::var<bool> bool_var3("b3", "bool3", 1, ccli::NONE, "Third bool var");
-	ccli::var<bool> bool_var4("b4", "bool4", true, ccli::NONE, "Fourth bool var");
+	ccli::Var<bool> bool_var1("b1", "bool1", 0, ccli::NONE, "First bool Var");
+	ccli::Var<bool> bool_var2("b2", "bool2", false, ccli::NONE, "Second bool Var");
+	ccli::Var<bool> bool_var3("b3", "bool3", 1, ccli::NONE, "Third bool Var");
+	ccli::Var<bool> bool_var4("b4", "bool4", true, ccli::NONE, "Fourth bool Var");
 
 	std::cout << "\t<args> no args (defaults) </args>" << std::endl;
 	std::cout << "\tbool_var1 is " << bool_var1.getValue() << " should be " << false << std::endl;
@@ -86,11 +86,11 @@ int main(int argc, char* argv[]) {
 	test1();
 
 
-	ccli::var<float, 4, ccli::MaxLimit<1.0>, ccli::MinLimit<-1>> float_var1("f1", "float1", {0}, ccli::NONE, "First bool var");
-	ccli::var<float, 4> float_var2("f2", "float2", {0}, ccli::NONE, "First bool var");
-	ccli::var<float, 2> var_test("t", "test", { 100, 200 }, ccli::CONFIG_RDWR);
-	ccli::var<short, 1, ccli::MaxLimit<500>> short_var("s", "short", 0);
-	ccli::var<bool> bool_var("b", "bool1", false);
+	ccli::Var<float, 4, ccli::MaxLimit<1.0>, ccli::MinLimit<-1>> float_var1("f1", "float1", {0}, ccli::NONE, "First bool Var");
+	ccli::Var<float, 4> float_var2("f2", "float2", {0}, ccli::NONE, "First bool Var");
+	ccli::Var<float, 2> var_test("t", "test", { 100, 200 }, ccli::CONFIG_RDWR);
+	ccli::Var<short, 1, ccli::MaxLimit<500>> short_var("s", "short", 0);
+	ccli::Var<bool> bool_var("b", "bool1", false);
 	ccli::parseArgs(argc, argv);
 	ccli::loadConfig("test.cfg");
 	var_test.setValue({ 200, 200 });
@@ -105,11 +105,11 @@ int main(int argc, char* argv[]) {
 
 	std::cout << "repr: " << float_var1.getValueString() << std::endl;
 
-	ccli::var<std::string> string_var("str1", "string1", "A cool value");
-	ccli::var<std::string> string_var2(std::string{ "str2" }, "string2", "Another cool value");
+	ccli::Var<std::string> string_var("str1", "string1", "A cool value");
+	ccli::Var<std::string> string_var2(std::string{ "str2" }, "string2", "Another cool value");
 
 	std::cout << "Currently registerd variables..." << std::endl;
-	ccli::forEachVar([](ccli::var_base& var, size_t idx) -> ccli::IterationDecision {
+	ccli::forEachVar([](ccli::VarBase& var, size_t idx) -> ccli::IterationDecision {
 		std::cout << "... " << idx << " - " << var.getLongName() << " " << var.getValueString() << std::endl;
 		return {};
 	});
