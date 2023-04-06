@@ -31,6 +31,7 @@ SOFTWARE.
 #include <deque>
 #include <fstream>
 #include <filesystem>
+#include <charconv>
 
 constexpr char configDelimiter = '=';
 constexpr uint32_t helpColumnWidthShort = 20;
@@ -357,3 +358,39 @@ bool ccli::var_base::locked() const
 void ccli::var_base::locked(const bool aLocked)
 { mLocked = aLocked; }
 
+int ccli::var_base::parseInt(std::string_view token) {
+	int value;
+	auto result = std::from_chars(token.data(), token.data() + token.size(), value);
+	if (result.ec == std::errc::invalid_argument) {
+		getErrorDeque().emplace_back("'" + std::string{ token } + "' not convertible");
+	}
+
+	return value;
+}
+
+float ccli::var_base::parseFloat(std::string_view token) {
+	float value;
+	auto result = std::from_chars(token.data(), token.data() + token.size(), value);
+	if (result.ec == std::errc::invalid_argument) {
+		getErrorDeque().emplace_back("'" + std::string{ token } + "' not convertible");
+	}
+
+	return value;
+}
+
+bool ccli::var_base::parseBool(std::string_view token) {
+	if (token.empty()) {
+		return true;
+	}
+
+	bool value;
+	std::string copiedToken{ token };
+
+	std::istringstream{ copiedToken } >> std::boolalpha >> value;
+	if (value) {
+		return true;
+	}
+
+	std::istringstream{ copiedToken } >> value;
+	return value;
+}
