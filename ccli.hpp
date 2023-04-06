@@ -48,7 +48,6 @@ public:
 	static void						loadConfig(const std::string& aCfgFile);
 	static void						writeConfig(const std::string& aCfgFile);
 	static void						executeCallbacks();
-	static std::deque<std::string>	getHelp();
 	static std::deque<std::string>  checkErrors();
 	static IterationDecision		forEachVar(std::function<IterationDecision(var_base&, size_t)>);
 
@@ -284,7 +283,7 @@ public:
 								if (isCallbackAutoExecuted()) executeCallback();
 							}
 
-		static constexpr char*		mDelimiter = ",";
+		static constexpr const char* mDelimiter = ",";
 		const std::function<void(const std::array<TData, S>&)> mCallback;
 		bool		mCallbackCharged;
 		TStorage	mValue;

@@ -259,43 +259,6 @@ void ccli::executeCallbacks()
 	}
 }
 
-std::deque<std::string> ccli::getHelp()
-{
-	std::deque<std::string> help;
-	const std::map<std::string, ccli::var_base*>& mapLong = getLongNameVarMap();
-	const std::map<std::string, ccli::var_base*>& mapShort = getShortNameVarMap();
-
-	for(const auto& var : mapShort)
-	{
-		std::string s = "  -" + var.second->getShortName();
-		//if(!var.second->getLongName().empty()) s += " | --" + var.second->getLongName();
-		if (s.size() > helpColumnWidthShort)
-		{
-			help.push_back(s);
-			s.clear();
-		}
-		s += std::string(helpColumnWidthShort - s.size(), ' ');
-		s += var.second->getDescription();
-		help.push_back(s);
-	}
-	for (const auto& var : mapLong)
-	{
-		//if(var.second->getShortName().empty())
-		{
-			std::string s = "  --" + var.second->getLongName();
-			if (s.size() > helpColumnWidthLong)
-			{
-				help.push_back(s);
-				s.clear();
-			}
-			s += std::string(helpColumnWidthLong - s.size(), ' ');
-			s += var.second->getDescription();
-			help.push_back(s);
-		}
-	}
-	return help;
-}
-
 std::deque<std::string> ccli::checkErrors()
 {
 	std::deque<std::string>& deque = getErrorDeque();
