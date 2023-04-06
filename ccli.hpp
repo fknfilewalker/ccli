@@ -230,14 +230,15 @@ public:
 							}
 		std::string			getValueString() override
 							{
-								std::string s;
-								for(const TData& v : mValue)
+								std::stringstream stream;
+								for(size_t i= 0; i!= mValue.size(); i++)
 								{
-									if (!s.empty()) s += mDelimiter;
-									if constexpr (std::is_same_v<TData, std::string>) s += v;
-									else s += std::to_string(v);
+									if (i) {
+										stream << mDelimiter;
+									}
+									stream << mValue.at(i);
 								}
-								return s;
+								return stream.str();
 							}
 	private:
 		void				setValueInternal(const TStorage& aValue)

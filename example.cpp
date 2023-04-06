@@ -101,5 +101,7 @@ int main(int argc, char* argv[]) {
 	std::cout << "Sizeof float_var1: " << sizeof(float_var1) << std::endl;
 	std::cout << "Sizeof float_var2: " << sizeof(float_var2) << std::endl;
 
+	std::cout << "repr: " << float_var1.getValueString() << std::endl;
+
 	return 0;
 }
