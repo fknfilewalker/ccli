@@ -39,10 +39,7 @@ public:
 		enum DecisionType { Continue, Break };
 
 		IterationDecision() = default;
-
-		IterationDecision(const DecisionType d) : decision{ d }
-		{
-		}
+		IterationDecision(const DecisionType d) : decision{ d } {}
 
 		bool operator==(const DecisionType d) const { return decision == d; }
 		const DecisionType decision{ Continue };
@@ -97,8 +94,8 @@ public:
 		[[nodiscard]] bool isCallbackAutoExecuted() const;
 
 		[[nodiscard]] virtual bool isBool() const = 0;
-		[[nodiscard]] virtual bool isInt() const = 0;
-		[[nodiscard]] virtual bool isFloat() const = 0;
+		[[nodiscard]] virtual bool isIntegral() const = 0;
+		[[nodiscard]] virtual bool isFloatingPoint() const = 0;
 		[[nodiscard]] virtual bool isString() const = 0;
 
 		[[nodiscard]] virtual std::optional<bool> asBool(size_t = 0) const = 0;
@@ -158,16 +155,14 @@ public:
 	struct VariableSizedData<TData, 1>
 	{
 		VariableSizedData() = default;
-
 		template <typename U, typename = std::enable_if_t<std::is_same_v<TData, std::string>>>
-		VariableSizedData(const U& d) : mData{d} {}
-		VariableSizedData(const TData& d) : mData{d} {}
-
+		VariableSizedData(const U& d) : mData{ d } {}
+		VariableSizedData(const TData& d) : mData{ d } {}
 		TData mData;
 
 		static constexpr auto size() { return 1; }
-		auto& at(size_t idx) { return mData; }
-		const auto& at(size_t idx) const { return mData; }
+		auto& at(size_t) { return mData; }
+		const auto& at(size_t) const { return mData; }
 		auto* begin() { return &mData; }
 		auto* end() { return &mData + 1; }
 		std::array<TData, 1> asArray() const { return { mData }; }
@@ -200,7 +195,6 @@ public:
 		Var& operator=(Var&&) = delete;
 
 		auto& getValue() { return _value.mData; }
-
 		void setValue(const TStorage& aValue)
 		{
 			if (isCliOnly()) return;
@@ -223,8 +217,8 @@ public:
 		[[nodiscard]] bool isCallbackCharged() const { return _callbackCharged; }
 
 		[[nodiscard]] bool isBool() const override { return std::is_same_v<TData, bool>; }
-		[[nodiscard]] bool isInt() const override { return std::is_integral_v<TData>; }
-		[[nodiscard]] bool isFloat() const override { return std::is_floating_point_v<TData>; }
+		[[nodiscard]] bool isIntegral() const override { return std::is_integral_v<TData>; }
+		[[nodiscard]] bool isFloatingPoint() const override { return std::is_floating_point_v<TData>; }
 		[[nodiscard]] bool isString() const override { return std::is_same_v<TData, std::string>; }
 
 		[[nodiscard]] std::optional<bool> asBool(size_t idx= 0) const override
