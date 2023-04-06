@@ -91,6 +91,10 @@ public:
 	protected:
 		virtual void				setValueStringInternal(const std::string& aString) = 0;
 
+		static int parseInt(std::string_view);
+		static float parseFloat(std::string_view);
+		static bool parseBool(std::string_view);
+
 		friend class ccli;
 		const std::string			mShortName;
 		const std::string			mLongName;
@@ -261,23 +265,15 @@ public:
 								size_t pos;
 								do {
 									pos = aString.find(mDelimiter, current);
-									std::string token = aString.substr(current, pos - current);
+									std::string_view token = std::string_view{ aString }.substr( current, pos - current);
 									current = pos + 1;
 
 									if (count > mValue.size() - 1) break;
 
-									if constexpr (std::is_same_v<TData, float>) mValue.at(count) = std::stof(token);
-									else if constexpr (std::is_same_v<TData, int>) mValue.at(count) = std::stoi(token);
+									if constexpr (std::is_same_v<TData, float>) mValue.at(count) = parseFloat(token);
+									else if constexpr (std::is_same_v<TData, int>) mValue.at(count) = parseInt(token);
 									else if constexpr (std::is_same_v<TData, std::string>) mValue.at(count) = token;
-									else if constexpr (std::is_same_v<TData, bool>) {
-										if (token.empty()) mValue.at(count) = true;
-										else {
-											bool bn, bs;
-											std::istringstream(token) >> bn;
-											std::istringstream(token) >> std::boolalpha >> bs;
-											mValue.at(count) = bn || bs;
-										}
-									}
+									else if constexpr (std::is_same_v<TData, bool>) mValue.at(count) = parseBool(token);
 									count++;
 								} while (pos != std::string::npos);
 
