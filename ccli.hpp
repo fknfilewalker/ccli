@@ -228,7 +228,7 @@ public:
 								if (isCallbackAutoExecuted()) executeCallback();
 							}
 
-		const std::string	mDelimiter = ",";
+		static constexpr char*	mDelimiter = ",";
 		const std::function<void(const std::array<T, S>&)> mCallback;
 		bool				mCallbackCharged;
 		std::array<T, S>	mValue;
