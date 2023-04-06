@@ -114,17 +114,17 @@ public:
 		bool						mLocked;
 	};
 
-	template<long long Value>
+	template<auto Value>
 	struct MaxLimit {
 		template<typename T>
 		static T apply(T x) { return x > Value ? Value : x; }
 	};
 
-	template<long long Value>
+	template<auto Value>
 	struct MinLimit {
 		template<typename T>
 		static T apply(T x) { return x < Value ? Value : x; }
-	};
+	};;
 
 
 	template<typename TData, size_t S>
@@ -236,7 +236,7 @@ public:
 		template<typename TLimit, typename ...TRest>
 		struct LimitApplier<TLimit, TRest...> {
 			static auto apply(TData x) {
-				return Applier<TRest...>::apply(TLimit::apply(x));
+				return LimitApplier<TRest...>::apply(TLimit::apply(x));
 			}
 		};
 
