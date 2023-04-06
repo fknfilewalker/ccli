@@ -336,8 +336,9 @@ bool ccli::var_base::locked() const
 void ccli::var_base::locked(const bool aLocked)
 { mLocked = aLocked; }
 
-int ccli::var_base::parseInt(std::string_view token) {
-	int value;
+template<typename T>
+T parseUsingFromChars(std::string_view token) {
+	T value;
 	auto result = std::from_chars(token.data(), token.data() + token.size(), value);
 	if (result.ec == std::errc::invalid_argument) {
 		getErrorDeque().emplace_back("'" + std::string{ token } + "' not convertible");
@@ -346,14 +347,12 @@ int ccli::var_base::parseInt(std::string_view token) {
 	return value;
 }
 
-float ccli::var_base::parseFloat(std::string_view token) {
-	float value;
-	auto result = std::from_chars(token.data(), token.data() + token.size(), value);
-	if (result.ec == std::errc::invalid_argument) {
-		getErrorDeque().emplace_back("'" + std::string{ token } + "' not convertible");
-	}
+long long ccli::var_base::parseIntegral(std::string_view token) {
+	return parseUsingFromChars<long long>(token);
+}
 
-	return value;
+double ccli::var_base::parseDouble(std::string_view token) {
+	return parseUsingFromChars<double>(token);
 }
 
 bool ccli::var_base::parseBool(std::string_view token) {
