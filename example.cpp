@@ -114,5 +114,11 @@ int main(int argc, char* argv[]) {
 		return {};
 	});
 
+	std::cout << *var_test.asBool() << std::endl;
+	std::cout << *var_test.asInt() << std::endl;
+	std::cout << *var_test.asFloat() << std::endl;
+	std::cout << var_test.asString().has_value() << std::endl;
+	std::cout << *string_var.asString() << std::endl;
+
 	return 0;
 }
