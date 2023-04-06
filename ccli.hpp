@@ -30,262 +30,297 @@ SOFTWARE.
 #include <functional>
 #include <sstream>
 #include <deque>
-#include <optional>
 
 class ccli
 {
 public:
-	struct IterationDecision {
+	struct IterationDecision
+	{
 		enum DecisionType { Continue, Break };
+
 		IterationDecision() = default;
-		IterationDecision(DecisionType d) : decision{ d } {}
+
+		IterationDecision(DecisionType d) : decision{d}
+		{
+		}
+
 		bool operator==(DecisionType d) const { return decision == d; }
-		const DecisionType decision{ Continue };
+		const DecisionType decision{Continue};
 	};
 
 	class var_base;
-	static void						parseArgs(int aArgc, const char* const aArgv[]);
-	static void						loadConfig(const std::string& aCfgFile);
-	static void						writeConfig(const std::string& aCfgFile);
-	static void						executeCallbacks();
-	static std::deque<std::string>  checkErrors();
-	static IterationDecision		forEachVar(std::function<IterationDecision(var_base&, size_t)>);
+	static void parseArgs(int aArgc, const char* const aArgv[]);
+	static void loadConfig(const std::string& aCfgFile);
+	static void writeConfig(const std::string& aCfgFile);
+	static void executeCallbacks();
+	static std::deque<std::string> checkErrors();
+	static IterationDecision forEachVar(const std::function<IterationDecision(var_base&, size_t)>&);
 
-	enum Flag {
-		NONE						= (0 << 0),
-		CLI_ONLY					= (1 << 0),	// can only be set through parseArgs
-		READ_ONLY					= (1 << 1),	// display only, cannot be changed at all
-		CONFIG_RD					= (1 << 2),	// load variable from config file
-		CONFIG_RDWR					= (3 << 2),	// load variable from config file and save changes back to config file
-		MANUAL_EXEC					= (1 << 4)	// execute callback only when executeCallback/executeCallbacks is called
+	enum Flag
+	{
+		NONE		= (0 << 0),
+		CLI_ONLY	= (1 << 0),	// can only be set through parseArgs
+		READ_ONLY	= (1 << 1),	// display only, cannot be changed at all
+		CONFIG_RD	= (1 << 2),	// load variable from config file
+		CONFIG_RDWR = (3 << 2),	// load variable from config file and save changes back to config file
+		MANUAL_EXEC = (1 << 4)	// execute callback only when executeCallback/executeCallbacks is called
 	};
 
 	class var_base
 	{
 	public:
-									var_base(std::string aShortName, std::string aLongName, uint32_t aFlags, 
-												std::string aDescription, bool aHasCallback);
-		virtual						~var_base();
-									
-									var_base(const var_base&) = delete;
-									var_base(var_base&&) = delete;
-		var_base&					operator=(const var_base&) = delete;
-		var_base&					operator=(var_base&&) = delete;
+		var_base(std::string aShortName, std::string aLongName, uint32_t aFlags,
+		         std::string aDescription, bool aHasCallback);
+		virtual ~var_base();
 
-		const std::string&			getLongName() const;
-		const std::string&			getShortName() const;
-		const std::string&			getDescription() const;
+		var_base(const var_base&) = delete;
+		var_base(var_base&&) = delete;
+		var_base& operator=(const var_base&) = delete;
+		var_base& operator=(var_base&&) = delete;
 
-		virtual std::string			getValueString() = 0;
-		virtual void				setValueString(const std::string& aString) = 0;
+		[[nodiscard]] const std::string& getLongName() const;
+		[[nodiscard]] const std::string& getShortName() const;
+		[[nodiscard]] const std::string& getDescription() const;
 
-		bool						hasCallback() const;
-		virtual bool				executeCallback() = 0;
+		virtual std::string getValueString() = 0;
+		virtual void setValueString(const std::string& aString) = 0;
 
-		virtual size_t				size() const = 0;
+		[[nodiscard]] bool hasCallback() const;
+		virtual bool executeCallback() = 0;
 
-		bool						isCliOnly() const;
-		bool						isReadOnly() const;
-		bool						isConfigRead() const;
-		bool						isConfigReadWrite() const;
-		bool						isCallbackAutoExecuted() const;
+		[[nodiscard]] virtual size_t size() const = 0;
 
-		virtual bool				isBool() const = 0;
-		virtual bool				isInt() const = 0;
-		virtual bool				isFloat() const = 0;
-		virtual bool				isString() const = 0;
+		[[nodiscard]] bool isCliOnly() const;
+		[[nodiscard]] bool isReadOnly() const;
+		[[nodiscard]] bool isConfigRead() const;
+		[[nodiscard]] bool isConfigReadWrite() const;
+		[[nodiscard]] bool isCallbackAutoExecuted() const;
 
-		bool						locked() const;
-		void						locked(bool aLocked);
+		[[nodiscard]] virtual bool isBool() const = 0;
+		[[nodiscard]] virtual bool isInt() const = 0;
+		[[nodiscard]] virtual bool isFloat() const = 0;
+		[[nodiscard]] virtual bool isString() const = 0;
+
+		[[nodiscard]] bool locked() const;
+		void locked(bool aLocked);
 
 	protected:
-		virtual void				setValueStringInternal(const std::string& aString) = 0;
+		virtual void setValueStringInternal(const std::string& aString) = 0;
 
 		static long long parseIntegral(std::string_view);
 		static double parseDouble(std::string_view);
 		static bool parseBool(std::string_view);
 
 		friend class ccli;
-		const std::string			mShortName;
-		const std::string			mLongName;
-		const std::string			mDescription;
-		const uint32_t				mFlags;
-		const bool					mHasCallback;
-		bool						mLocked;
+		const std::string mShortName;
+		const std::string mLongName;
+		const std::string mDescription;
+		const uint32_t mFlags;
+		const bool mHasCallback;
+		bool mLocked;
 	};
 
-	template<auto Value>
-	struct MaxLimit {
-		template<typename T>
+	template <auto Value>
+	struct MaxLimit
+	{
+		template <typename T>
 		static T apply(T x) { return x > Value ? Value : x; }
 	};
 
-	template<auto Value>
-	struct MinLimit {
-		template<typename T>
+	template <auto Value>
+	struct MinLimit
+	{
+		template <typename T>
 		static T apply(T x) { return x < Value ? Value : x; }
 	};
 
 
-	template<typename TData, size_t S>
-	struct VariableSizedData {
+	template <typename TData, size_t S>
+	struct VariableSizedData
+	{
 		static_assert(S >= 1, "Size must be larger 0");
 		std::array<TData, S> mData;
 
-		constexpr auto size() const { return S; }
+		static constexpr auto size() { return S; }
 		auto& at(size_t idx) { return mData.at(idx); }
 		auto begin() { return mData.begin(); }
 		auto end() { return mData.end(); }
 		const std::array<TData, S>& asArray() const { return mData; }
 	};
 
-	template<typename TData>
-	struct VariableSizedData<TData, 1> {
+	template <typename TData>
+	struct VariableSizedData<TData, 1>
+	{
 		VariableSizedData() = default;
 
-		template<typename U, typename = std::enable_if_t<std::is_same_v<TData, std::string>>>
-		VariableSizedData(const U& d) : mData{ d } {}
+		template <typename U, typename = std::enable_if_t<std::is_same_v<TData, std::string>>>
+		VariableSizedData(const U& d) : mData{d}
+		{
+		}
 
-		VariableSizedData(const TData& d) : mData{ d } {}
+		VariableSizedData(const TData& d) : mData{d}
+		{
+		}
 
 		TData mData;
 
-		constexpr auto size() const { return 1; }
+		static constexpr auto size() { return 1; }
 		auto& at(size_t idx) { return mData; }
 		auto* begin() { return &mData; }
 		auto* end() { return &mData + 1; }
-		std::array<TData, 1> asArray() const { return { mData }; }
+		std::array<TData, 1> asArray() const { return {mData}; }
 	};
 
 	template <
 		typename TData,
 		size_t S = 1,
-		typename ... TLimits
+		typename... TLimits
 	>
-	class var final : public var_base {
+	class var final : public var_base
+	{
 	public:
 		using TStorage = VariableSizedData<TData, S>;
-		static_assert(std::is_integral_v<TData> || std::is_floating_point_v<TData> || std::is_same_v<TData, std::string>, "Type must be integral, floating-point or string");
-		static_assert((!std::is_same_v<TData, std::string> && !std::is_same_v<TData, bool>) || sizeof...(TLimits) == 0, "String and boolean values may not have limits");
+		static_assert(std::is_integral_v<TData> || std::is_floating_point_v<TData> || std::is_same_v<TData, std::string>
+			, "Type must be integral, floating-point or string");
+		static_assert((!std::is_same_v<TData, std::string> && !std::is_same_v<TData, bool>) || sizeof...(TLimits) == 0,
+			"String and boolean values may not have limits");
 
-							var(const std::string& aShortName, const std::string& aLongName, const TStorage& aValue = {}, 
-								uint32_t aFlags = NONE, const std::string& aDescription = {},
-								const std::function<void(const std::array<TData, S>&)> aCallback = {})
-									: var_base(aShortName, aLongName, aFlags, aDescription, aCallback != nullptr),
-									mCallback(aCallback), mCallbackCharged(false), mValue(aValue) {}
+		var(const std::string& aShortName, const std::string& aLongName, const TStorage& aValue = {},
+		    uint32_t aFlags = NONE, const std::string& aDescription = {},
+		    const std::function<void(const std::array<TData, S>&)> aCallback = {})
+			: var_base(aShortName, aLongName, aFlags, aDescription, aCallback != nullptr),
+			  mCallback(aCallback), mCallbackCharged(false), mValue(aValue)
+		{
+		}
 
-							~var() override = default;
+		~var() override = default;
 
-							var(const var&) = delete;
-							var(var&&) = delete;
-		var&				operator=(const var&) = delete;
-		var&				operator=(var&&) = delete;
+		var(const var&) = delete;
+		var(var&&) = delete;
+		var& operator=(const var&) = delete;
+		var& operator=(var&&) = delete;
 
-		auto&				getValue() { return mValue.mData; }
-		void				setValue(const TStorage& aValue)
-							{
-								if (isCliOnly()) return;
-								setValueInternal(aValue);
-							}
+		auto& getValue() { return mValue.mData; }
 
-		void				chargeCallback() { mCallbackCharged = true; }
-		bool				executeCallback() override
-							{
-								if (hasCallback() && mCallbackCharged) {
-									mCallback(mValue.asArray());
-									mCallbackCharged = false;
-									return true;
-								}
-								return false;
-							}
+		void setValue(const TStorage& aValue)
+		{
+			if (isCliOnly()) return;
+			setValueInternal(aValue);
+		}
 
-		size_t				size()const override { return mValue.size(); }
+		void chargeCallback() { mCallbackCharged = true; }
 
-		bool				isCallbackCharged() const { return mCallbackCharged; }
+		bool executeCallback() override
+		{
+			if (hasCallback() && mCallbackCharged)
+			{
+				mCallback(mValue.asArray());
+				mCallbackCharged = false;
+				return true;
+			}
+			return false;
+		}
 
-		bool				isBool() const override { return std::is_same_v<TData, bool>; }
-		bool				isInt() const override { return std::is_integral_v<TData>; }
-		bool				isFloat() const override { return std::is_floating_point_v<TData>; }
-		bool				isString() const override { return std::is_same_v<TData, std::string>; }
+		[[nodiscard]] size_t size() const override { return mValue.size(); }
 
-		void				setValueString(const std::string& aString) override
-							{
-								if (isCliOnly()) return;
-								setValueStringInternal(aString);
-							}
-		std::string			getValueString() override
-							{
-								std::stringstream stream;
-								for(size_t i= 0; i!= mValue.size(); i++)
-								{
-									if (i) {
-										stream << mDelimiter;
-									}
-									stream << mValue.at(i);
-								}
-								return stream.str();
-							}
+		[[nodiscard]] bool isCallbackCharged() const { return mCallbackCharged; }
+
+		[[nodiscard]] bool isBool() const override { return std::is_same_v<TData, bool>; }
+		[[nodiscard]] bool isInt() const override { return std::is_integral_v<TData>; }
+		[[nodiscard]] bool isFloat() const override { return std::is_floating_point_v<TData>; }
+		[[nodiscard]] bool isString() const override { return std::is_same_v<TData, std::string>; }
+
+		void setValueString(const std::string& aString) override
+		{
+			if (isCliOnly()) return;
+			setValueStringInternal(aString);
+		}
+
+		std::string getValueString() override
+		{
+			std::stringstream stream;
+			for (size_t i = 0; i != mValue.size(); i++)
+			{
+				if (i)
+				{
+					stream << mDelimiter;
+				}
+				stream << mValue.at(i);
+			}
+			return stream.str();
+		}
+
 	private:
-		template<typename ... TRest>
-		struct LimitApplier {
-			static auto apply(TData x) {
+		template <typename... TRest>
+		struct LimitApplier
+		{
+			static auto apply(TData x)
+			{
 				return x;
 			}
 		};
 
-		template<typename TLimit, typename ...TRest>
-		struct LimitApplier<TLimit, TRest...> {
-			static auto apply(TData x) {
+		template <typename TLimit, typename... TRest>
+		struct LimitApplier<TLimit, TRest...>
+		{
+			static auto apply(TData x)
+			{
 				return LimitApplier<TRest...>::apply(TLimit::apply(x));
 			}
 		};
 
-		void				setValueInternal(const TStorage& aValue)
-							{
-								if (mLocked || isReadOnly()) return;
-								mValue = aValue;
-								if (hasCallback()) {
-									mCallbackCharged = true;
-									if (isCallbackAutoExecuted()) executeCallback();
-								}
-							}
-		void				setValueStringInternal(const std::string& aString) override
-							{
-								if (mLocked || isReadOnly()) return;
-								// empty string only allowed for bool and string
-								if constexpr (!std::is_same_v<TData, bool> && !std::is_same_v<TData, std::string>) if (aString.empty()) return;
+		void setValueInternal(const TStorage& aValue)
+		{
+			if (mLocked || isReadOnly()) return;
+			mValue = aValue;
+			if (hasCallback())
+			{
+				mCallbackCharged = true;
+				if (isCallbackAutoExecuted()) executeCallback();
+			}
+		}
 
-								size_t count = 0;
-								size_t current = 0;
-								size_t pos;
-								do {
-									pos = aString.find(mDelimiter, current);
-									std::string_view token = std::string_view{ aString }.substr( current, pos - current);
-									current = pos + 1;
+		void setValueStringInternal(const std::string& aString) override
+		{
+			if (mLocked || isReadOnly()) return;
+			// empty string only allowed for bool and string
+			if constexpr (!std::is_same_v<TData, bool> && !std::is_same_v<TData, std::string>) if (aString.empty())
+				return;
 
-									if (count > mValue.size() - 1) break;
+			size_t count = 0;
+			size_t current = 0;
+			size_t pos;
+			do
+			{
+				pos = aString.find(mDelimiter, current);
+				std::string_view token = std::string_view{aString}.substr(current, pos - current);
+				current = pos + 1;
 
-									if constexpr (std::is_floating_point_v<TData>) mValue.at(count) = parseDouble(token);
-									else if constexpr (std::is_same_v<TData, bool>) mValue.at(count) = parseBool(token);
-									else if constexpr (std::is_integral_v<TData>) mValue.at(count) = parseIntegral(token);
-									else if constexpr (std::is_same_v<TData, std::string>) mValue.at(count) = token;
-									count++;
-								} while (pos != std::string::npos);
+				if (count > mValue.size() - 1) break;
 
-								if constexpr (!std::is_same_v<TData, std::string>) {
-									for (uint32_t i = 0; i < size(); i++)
-									{
-										mValue.at(i) = LimitApplier<TLimits...>::apply(mValue.at(i));
-									}
-								}
+				if constexpr (std::is_floating_point_v<TData>) mValue.at(count) = parseDouble(token);
+				else if constexpr (std::is_same_v<TData, bool>) mValue.at(count) = parseBool(token);
+				else if constexpr (std::is_integral_v<TData>) mValue.at(count) = parseIntegral(token);
+				else if constexpr (std::is_same_v<TData, std::string>) mValue.at(count) = token;
+				count++;
+			}
+			while (pos != std::string::npos);
 
-								mCallbackCharged = true;
-								if (isCallbackAutoExecuted()) executeCallback();
-							}
+			if constexpr (!std::is_same_v<TData, std::string>)
+			{
+				for (uint32_t i = 0; i < size(); i++)
+				{
+					mValue.at(i) = LimitApplier<TLimits...>::apply(mValue.at(i));
+				}
+			}
+
+			mCallbackCharged = true;
+			if (isCallbackAutoExecuted()) executeCallback();
+		}
 
 		static constexpr const char* mDelimiter = ",";
 		const std::function<void(const std::array<TData, S>&)> mCallback;
-		bool		mCallbackCharged;
-		TStorage	mValue;
+		bool mCallbackCharged;
+		TStorage mValue;
 	};
 };
