@@ -19,6 +19,7 @@ cmake_minimum_required(VERSION 3.14.0)
 set(APP_NAME example)
 
 # COMPILER
+# set(CMAKE_GENERATOR_TOOLSET "ClangCL")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)
 if(WIN32)

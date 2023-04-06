@@ -41,11 +41,11 @@ public:
 
 		IterationDecision() = default;
 
-		IterationDecision(DecisionType d) : decision{ d }
+		IterationDecision(const DecisionType d) : decision{ d }
 		{
 		}
 
-		bool operator==(DecisionType d) const { return decision == d; }
+		bool operator==(const DecisionType d) const { return decision == d; }
 		const DecisionType decision{ Continue };
 	};
 
