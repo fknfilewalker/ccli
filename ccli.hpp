@@ -1,8 +1,7 @@
 /*
 MIT License
 
-Copyright(c) 2022 Lukas Lipp
-Copyright(c) 2023 Matthias Preymann
+Copyright(c) 2022 Lukas Lipp, Matthias Preymann
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this softwareand associated documentation files(the "Software"), to deal
@@ -70,8 +69,8 @@ public:
 	class var_base
 	{
 	public:
-		var_base(std::string_view aShortName, std::string_view aLongName, uint32_t aFlags,
-		         std::string_view aDescription, bool aHasCallback);
+		var_base(std::string_view shortName, std::string_view longName, uint32_t flags,
+		         std::string_view description, bool hasCallback);
 		virtual ~var_base();
 
 		var_base(const var_base&) = delete;
@@ -118,12 +117,12 @@ public:
 		static bool parseBool(std::string_view);
 
 		friend class ccli;
-		const std::string mShortName;
-		const std::string mLongName;
-		const std::string mDescription;
-		const uint32_t mFlags;
-		const bool mHasCallback;
-		bool mLocked;
+		const std::string _shortName;
+		const std::string _longName;
+		const std::string _description;
+		const uint32_t _flags;
+		const bool _hasCallback;
+		bool _locked;
 	};
 
 	template <auto Value>
@@ -188,11 +187,11 @@ public:
 		static_assert((!std::is_same_v<TData, std::string> && !std::is_same_v<TData, bool>) || sizeof...(TLimits) == 0,
 			"String and boolean values may not have limits");
 
-		var(const std::string_view aShortName, const std::string_view aLongName, const TStorage& aValue = {},
-		    const uint32_t aFlags = NONE, const std::string_view aDescription = {},
+		var(const std::string_view shortName, const std::string_view longName, const TStorage& value = {},
+		    const uint32_t flags = NONE, const std::string_view description = {},
 		    const std::function<void(const std::array<TData, S>&)> aCallback = {})
-			: var_base(aShortName, aLongName, aFlags, aDescription, aCallback != nullptr),
-				mCallback{ aCallback }, mCallbackCharged{ false }, mValue{ aValue } {}
+			: var_base(shortName, longName, flags, description, aCallback != nullptr),
+				_callback{ aCallback }, _callbackCharged{ false }, _value{ value } {}
 
 		~var() override = default;
 		var(const var&) = delete;
@@ -200,7 +199,7 @@ public:
 		var& operator=(const var&) = delete;
 		var& operator=(var&&) = delete;
 
-		auto& getValue() { return mValue.mData; }
+		auto& getValue() { return _value.mData; }
 
 		void setValue(const TStorage& aValue)
 		{
@@ -208,20 +207,20 @@ public:
 			setValueInternal(aValue);
 		}
 
-		void chargeCallback() { mCallbackCharged = true; }
+		void chargeCallback() { _callbackCharged = true; }
 		bool executeCallback() override
 		{
-			if (hasCallback() && mCallbackCharged)
+			if (hasCallback() && _callbackCharged)
 			{
-				mCallback(mValue.asArray());
-				mCallbackCharged = false;
+				_callback(_value.asArray());
+				_callbackCharged = false;
 				return true;
 			}
 			return false;
 		}
 
-		[[nodiscard]] size_t size() const override { return mValue.size(); }
-		[[nodiscard]] bool isCallbackCharged() const { return mCallbackCharged; }
+		[[nodiscard]] size_t size() const override { return _value.size(); }
+		[[nodiscard]] bool isCallbackCharged() const { return _callbackCharged; }
 
 		[[nodiscard]] bool isBool() const override { return std::is_same_v<TData, bool>; }
 		[[nodiscard]] bool isInt() const override { return std::is_integral_v<TData>; }
@@ -236,7 +235,7 @@ public:
 			}
 			else
 			{
-				return { static_cast<bool>(mValue.at(idx)) };
+				return { static_cast<bool>(_value.at(idx)) };
 			}
 		}
 
@@ -248,7 +247,7 @@ public:
 			}
 			else
 			{
-				return { static_cast<long long>(mValue.at(idx)) };
+				return { static_cast<long long>(_value.at(idx)) };
 			}
 		}
 
@@ -260,7 +259,7 @@ public:
 			}
 			else
 			{
-				return { static_cast<double>(mValue.at(idx)) };
+				return { static_cast<double>(_value.at(idx)) };
 			}
 		}
 
@@ -268,28 +267,28 @@ public:
 		{
 			if constexpr (std::is_same_v<TData, std::string>)
 			{
-				return { std::string_view{ mValue.at(idx) } };
+				return { std::string_view{ _value.at(idx) } };
 			}
 
 			return {};
 		}
 
-		void setValueString(std::string_view aString) override
+		void setValueString(const std::string_view string) override
 		{
 			if (isCliOnly()) return;
-			setValueStringInternal(aString);
+			setValueStringInternal(string);
 		}
 
 		std::string getValueString() override
 		{
 			std::stringstream stream;
-			for (size_t i = 0; i != mValue.size(); i++)
+			for (size_t i = 0; i != _value.size(); i++)
 			{
 				if (i)
 				{
-					stream << mDelimiter;
+					stream << _delimiter;
 				}
-				stream << mValue.at(i);
+				stream << _value.at(i);
 			}
 			return stream.str();
 		}
@@ -313,22 +312,22 @@ public:
 			}
 		};
 
-		void setValueInternal(const TStorage& aValue)
+		void setValueInternal(const TStorage& value)
 		{
-			if (mLocked || isReadOnly()) return;
-			mValue = aValue;
+			if (_locked || isReadOnly()) return;
+			_value = value;
 			if (hasCallback())
 			{
-				mCallbackCharged = true;
+				_callbackCharged = true;
 				if (isCallbackAutoExecuted()) executeCallback();
 			}
 		}
 
-		void setValueStringInternal(std::string_view aString) override
+		void setValueStringInternal(std::string_view string) override
 		{
-			if (mLocked || isReadOnly()) return;
+			if (_locked || isReadOnly()) return;
 			// empty string only allowed for bool and string
-			if constexpr (!std::is_same_v<TData, bool> && !std::is_same_v<TData, std::string>) if (aString.empty())
+			if constexpr (!std::is_same_v<TData, bool> && !std::is_same_v<TData, std::string>) if (string.empty())
 				return;
 
 			size_t count = 0;
@@ -336,16 +335,16 @@ public:
 			size_t pos;
 			do
 			{
-				pos = aString.find(mDelimiter, current);
-				std::string_view token = aString.substr(current, pos - current);
+				pos = string.find(_delimiter, current);
+				std::string_view token = string.substr(current, pos - current);
 				current = pos + 1;
 
-				if (count > mValue.size() - 1) break;
+				if (count > _value.size() - 1) break;
 
-				if constexpr (std::is_floating_point_v<TData>) mValue.at(count) = parseDouble(token);
-				else if constexpr (std::is_same_v<TData, bool>) mValue.at(count) = parseBool(token);
-				else if constexpr (std::is_integral_v<TData>) mValue.at(count) = parseIntegral(token);
-				else if constexpr (std::is_same_v<TData, std::string>) mValue.at(count) = token;
+				if constexpr (std::is_floating_point_v<TData>) _value.at(count) = static_cast<TData>(parseDouble(token));
+				else if constexpr (std::is_same_v<TData, bool>) _value.at(count) = parseBool(token);
+				else if constexpr (std::is_integral_v<TData>) _value.at(count) = static_cast<TData>(parseIntegral(token));
+				else if constexpr (std::is_same_v<TData, std::string>) _value.at(count) = token;
 				count++;
 			}
 			while (pos != std::string::npos);
@@ -354,17 +353,17 @@ public:
 			{
 				for (uint32_t i = 0; i < size(); i++)
 				{
-					mValue.at(i) = LimitApplier<TLimits...>::apply(mValue.at(i));
+					_value.at(i) = LimitApplier<TLimits...>::apply(_value.at(i));
 				}
 			}
 
-			mCallbackCharged = true;
+			_callbackCharged = true;
 			if (isCallbackAutoExecuted()) executeCallback();
 		}
 
-		static constexpr const char* mDelimiter = ",";
-		const std::function<void(const std::array<TData, S>&)> mCallback;
-		bool mCallbackCharged;
-		TStorage mValue;
+		static constexpr const char* _delimiter = ",";
+		const std::function<void(const std::array<TData, S>&)> _callback;
+		bool _callbackCharged;
+		TStorage _value;
 	};
 };
