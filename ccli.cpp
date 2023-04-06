@@ -50,29 +50,29 @@ namespace
 	** vars
 	*/
 	// contains static lists keeping track of all vars
-	std::map<std::string, ccli::var_base*>& getLongNameVarMap()
+	std::map<std::string, ccli::var_base*, std::less<>>& getLongNameVarMap()
 	{
-		static std::map<std::string, ccli::var_base*> map;
+		static std::map<std::string, ccli::var_base*, std::less<>> map;
 		return map;
 	}
 
-	std::map<std::string, ccli::var_base*>& getShortNameVarMap()
+	std::map<std::string, ccli::var_base*, std::less<>>& getShortNameVarMap()
 	{
-		static std::map<std::string, ccli::var_base*> map;
+		static std::map<std::string, ccli::var_base*, std::less<>> map;
 		return map;
 	}
 
-	ccli::var_base* findVarByLongName(const std::string& aLongName)
+	ccli::var_base* findVarByLongName(const std::string_view aLongName)
 	{
-		std::map<std::string, ccli::var_base*>& map = getLongNameVarMap();
+		std::map<std::string, ccli::var_base*, std::less<>>& map = getLongNameVarMap();
 		const auto it = map.find(aLongName);
 		if (it != map.end()) return it->second;
 		return nullptr;
 	}
 
-	ccli::var_base* findVarByShortName(const std::string& aShortName)
+	ccli::var_base* findVarByShortName(const std::string_view aShortName)
 	{
-		std::map<std::string, ccli::var_base*>& map = getShortNameVarMap();
+		std::map<std::string, ccli::var_base*, std::less<>>& map = getShortNameVarMap();
 		const auto it = map.find(aShortName);
 		if (it != map.end()) return it->second;
 		return nullptr;
@@ -80,8 +80,8 @@ namespace
 
 	void addToVarList(const std::string& aLongName, const std::string& aShortName, ccli::var_base* const aVar)
 	{
-		std::map<std::string, ccli::var_base*>& mapLong = getLongNameVarMap();
-		std::map<std::string, ccli::var_base*>& mapShort = getShortNameVarMap();
+		std::map<std::string, ccli::var_base*, std::less<>>& mapLong = getLongNameVarMap();
+		std::map<std::string, ccli::var_base*, std::less<>>& mapShort = getShortNameVarMap();
 		if (!aLongName.empty())
 		{
 			const bool inserted = mapLong.insert(std::pair<std::string, ccli::var_base*>(aLongName, aVar)).second;
@@ -94,11 +94,11 @@ namespace
 		}
 	}
 
-	void removeFromVarList(const std::string& aLongName, const std::string& aShortName,
+	void removeFromVarList(const std::string_view aLongName, const std::string_view aShortName,
 	                       const ccli::var_base* const aVar)
 	{
-		std::map<std::string, ccli::var_base*>& mapLong = getLongNameVarMap();
-		std::map<std::string, ccli::var_base*>& mapShort = getShortNameVarMap();
+		std::map<std::string, ccli::var_base*, std::less<>>& mapLong = getLongNameVarMap();
+		std::map<std::string, ccli::var_base*, std::less<>>& mapShort = getShortNameVarMap();
 
 		if (!aLongName.empty())
 		{
@@ -161,7 +161,7 @@ namespace
 		return false;
 	}
 
-	bool writeConfigFile(std::string const& aFilename, std::string const& aContent)
+	bool writeConfigFile(std::string const& aFilename, const std::string_view aContent)
 	{
 		std::ofstream file(aFilename, std::ios::out | std::ios::binary);
 		if (!file.is_open())
@@ -169,7 +169,7 @@ namespace
 			getErrorDeque().emplace_back("Could not open file '" + aFilename + "' for writing");
 			return false;
 		}
-		file.write(aContent.c_str(), static_cast<std::streamsize>(aContent.size()));
+		file.write(aContent.data(), static_cast<std::streamsize>(aContent.size()));
 		file.close();
 		return true;
 	}
