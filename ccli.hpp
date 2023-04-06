@@ -135,6 +135,33 @@ public:
 		std::pair<std::array<TData, S >, std::array<TData, S >> mValues;
 	};
 
+
+	template<typename TData, size_t S>
+	struct VariableSizedData {
+		static_assert(S >= 1, "Size must be larger 0");
+		std::array<TData, S> mData;
+
+		constexpr auto size() const { return S; }
+		auto& at(size_t idx) { return mData.at(idx); }
+		auto begin() { return mData.begin(); }
+		auto end() { return mData.end(); }
+		const std::array<TData, S>& asArray() const { return mData; }
+	};
+
+	template<typename TData>
+	struct VariableSizedData<TData, 1> {
+		VariableSizedData() = default;
+		VariableSizedData(const TData& d) : mData{ d } {}
+
+		TData mData;
+
+		constexpr auto size() const { return 1; }
+		auto& at(size_t idx) { return mData; }
+		auto* begin() { return &mData; }
+		auto* end() { return &mData + 1; }
+		std::array<TData, 1> asArray() const { return { mData }; }
+	};
+
 	template <
 		typename TData,
 		size_t S = 1,
@@ -143,11 +170,11 @@ public:
 	class var final : public var_base {
 	public:
 		using TLimitsData = TLimits<TData, S>;
+		using TStorage = VariableSizedData<TData, S>;
 		static_assert(std::is_same_v<TData, int> || std::is_same_v<TData, float> || std::is_same_v<TData, bool> || std::is_same_v<TData, std::string>, "Type must be bool, int, float or string");
-		static_assert(S >= 1, "Size must be larger 0");
 		static_assert(!std::is_same_v<TData, std::string> || !TLimitsData::hasLimits, "String value may not have limits");
 
-							var(const std::string& aShortName, const std::string& aLongName, const std::array<TData, S>& aValue = {}, 
+							var(const std::string& aShortName, const std::string& aLongName, const TStorage& aValue = {}, 
 								uint32_t aFlags = NONE, const std::string& aDescription = {},
 								const std::function<void(const std::array<TData, S>&)> aCallback = {})
 									: var_base(aShortName, aLongName, aFlags, aDescription, aCallback != nullptr),
@@ -155,7 +182,7 @@ public:
 
 							template <typename = std::enable_if_t<TLimitsData::hasLimits>>
 							var(const std::string& aShortName, const std::string& aLongName, const TLimitsData& aLimits, 
-								const std::array<TData, S>& aValue = {}, uint32_t aFlags = NONE,
+								const TStorage& aValue = {}, uint32_t aFlags = NONE,
 								const std::string& aDescription = {}, const std::function<void(const std::array<TData, S>&)> aCallback = {})
 								: var_base(aShortName, aLongName, aFlags, aDescription, aCallback != nullptr),
 								mCallback(aCallback), mCallbackCharged(false), mValue(aValue), mLimits(aLimits)
@@ -169,8 +196,8 @@ public:
 		var&				operator=(const var&) = delete;
 		var&				operator=(var&&) = delete;
 
-		auto&				getValue() { return mValue; }
-		void				setValue(const std::array<TData, S>& aValue)
+		auto&				getValue() { return mValue.mData; }
+		void				setValue(const TStorage& aValue)
 							{
 								if (isCliOnly()) return;
 								setValueInternal(aValue);
@@ -180,7 +207,7 @@ public:
 		bool				executeCallback() override
 							{
 								if (hasCallback() && mCallbackCharged) {
-									mCallback(mValue);
+									mCallback(mValue.asArray());
 									mCallbackCharged = false;
 									return true;
 								}
@@ -213,7 +240,7 @@ public:
 								return s;
 							}
 	private:
-		void				setValueInternal(const std::array<TData, S>& aValue)
+		void				setValueInternal(const TStorage& aValue)
 							{
 								if (mLocked || isReadOnly()) return;
 								mValue = aValue;
@@ -247,28 +274,25 @@ public:
 											bool bn, bs;
 											std::istringstream(token) >> bn;
 											std::istringstream(token) >> std::boolalpha >> bs;
-											mValue[count] = bn || bs;
+											mValue.at(count) = bn || bs;
 										}
 									}
 									count++;
 								} while (pos != std::string::npos);
 
-								// check limits
-								if constexpr (!std::is_same_v<TData, std::string>) {
-									for (uint32_t i = 0; i < size(); i++)
-									{
-										mValue[i] = mLimits.limit(i, mValue[i]);
-									}
+								for (uint32_t i = 0; i < size(); i++)
+								{
+									mValue.at(i) = mLimits.limit(i, mValue.at(i));
 								}
 
 								mCallbackCharged = true;
 								if (isCallbackAutoExecuted()) executeCallback();
 							}
 
-		static constexpr char*	mDelimiter = ",";
+		static constexpr char*		mDelimiter = ",";
 		const std::function<void(const std::array<TData, S>&)> mCallback;
-		bool				mCallbackCharged;
-		std::array<TData, S>	mValue;
+		bool		mCallbackCharged;
+		TStorage	mValue;
 		TLimitsData	mLimits;
 	};
 };
