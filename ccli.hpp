@@ -100,27 +100,67 @@ public:
 		bool						mLocked;
 	};
 
-	template <class T, size_t S = 1>
+	template<typename T, size_t>
+	struct NoLimits {
+		void order() {}
+		T limit(size_t, T x) const { return x; }
+
+		static constexpr bool hasLimits = false;
+	};
+
+	template<typename TData, size_t S>
+	struct Limits {
+		Limits(const std::array<TData, S >& left, const std::array<TData, S >& right) : mValues{ left, right } {}
+
+		void order() {
+			for (uint32_t i = 0; i < S; i++) {
+				if (mValues.first[i] > mValues.second[i]) {
+					std::swap(mValues.first[i], mValues.second[i]);
+				}
+			}
+		}
+
+		TData limit(size_t idx, TData x) const {
+			if (x < mValues.first[idx]) {
+				return mValues.first[idx];
+			}
+			if (x > mValues.second[idx]) {
+				return mValues.second[idx];
+			}
+			return x;
+		}
+
+		static constexpr bool hasLimits = true;
+	private:
+		std::pair<std::array<TData, S >, std::array<TData, S >> mValues;
+	};
+
+	template <
+		typename TData,
+		size_t S = 1,
+		template<typename, size_t> class TLimits= NoLimits
+	>
 	class var final : public var_base {
-		static_assert(std::is_same_v<T, int> || std::is_same_v<T, float> || std::is_same_v<T, bool> || std::is_same_v<T, std::string>, "Type must be bool, int, float or string");
-		static_assert(S >= 1, "Size must be larger 0");
 	public:
-							var(const std::string& aShortName, const std::string& aLongName, const std::array<T, S>& aValue = {}, 
+		using TLimitsData = TLimits<TData, S>;
+		static_assert(std::is_same_v<TData, int> || std::is_same_v<TData, float> || std::is_same_v<TData, bool> || std::is_same_v<TData, std::string>, "Type must be bool, int, float or string");
+		static_assert(S >= 1, "Size must be larger 0");
+		static_assert(!std::is_same_v<TData, std::string> || !TLimitsData::hasLimits, "String value may not have limits");
+
+							var(const std::string& aShortName, const std::string& aLongName, const std::array<TData, S>& aValue = {}, 
 								uint32_t aFlags = NONE, const std::string& aDescription = {},
-								const std::function<void(const std::array<T, S>&)> aCallback = {})
+								const std::function<void(const std::array<TData, S>&)> aCallback = {})
 									: var_base(aShortName, aLongName, aFlags, aDescription, aCallback != nullptr),
 									mCallback(aCallback), mCallbackCharged(false), mValue(aValue) {}
 
-							template <typename = std::enable_if_t<!std::is_same_v<T, std::string>>>
-							var(const std::string& aShortName, const std::string& aLongName, const std::pair<std::array<T, S>, std::array<T, S>>& aLimits, 
-								const std::array<T, S>& aValue = {}, uint32_t aFlags = NONE,
-								const std::string& aDescription = {}, const std::function<void(const std::array<T, S>&)> aCallback = {})
+							template <typename = std::enable_if_t<TLimitsData::hasLimits>>
+							var(const std::string& aShortName, const std::string& aLongName, const TLimitsData& aLimits, 
+								const std::array<TData, S>& aValue = {}, uint32_t aFlags = NONE,
+								const std::string& aDescription = {}, const std::function<void(const std::array<TData, S>&)> aCallback = {})
 								: var_base(aShortName, aLongName, aFlags, aDescription, aCallback != nullptr),
 								mCallback(aCallback), mCallbackCharged(false), mValue(aValue), mLimits(aLimits)
 							{
-								for(uint32_t i = 0; i < S; i++) {
-									if (mLimits->first[i] > mLimits->second[i]) std::swap(mLimits->first[i], mLimits->second[i]);
-								}
+								mLimits.order();
 							}
 							~var() override = default;
 
@@ -129,8 +169,8 @@ public:
 		var&				operator=(const var&) = delete;
 		var&				operator=(var&&) = delete;
 
-		std::array<T, S>&	getValue() { return mValue; }
-		void				setValue(const std::array<T, S>& aValue)
+		auto&				getValue() { return mValue; }
+		void				setValue(const std::array<TData, S>& aValue)
 							{
 								if (isCliOnly()) return;
 								setValueInternal(aValue);
@@ -151,10 +191,10 @@ public:
 
 		bool				isCallbackCharged() const { return mCallbackCharged; }
 
-		bool				isBool() const override { return std::is_same_v<T, bool>; }
-		bool				isInt() const override { return std::is_same_v<T, int>; }
-		bool				isFloat() const override { return std::is_same_v<T, float>; }
-		bool				isString() const override { return std::is_same_v<T, std::string>; }
+		bool				isBool() const override { return std::is_same_v<TData, bool>; }
+		bool				isInt() const override { return std::is_same_v<TData, int>; }
+		bool				isFloat() const override { return std::is_same_v<TData, float>; }
+		bool				isString() const override { return std::is_same_v<TData, std::string>; }
 
 		void				setValueString(const std::string& aString) override
 							{
@@ -164,16 +204,16 @@ public:
 		std::string			getValueString() override
 							{
 								std::string s;
-								for(const T& v : mValue)
+								for(const TData& v : mValue)
 								{
 									if (!s.empty()) s += mDelimiter;
-									if constexpr (std::is_same_v<T, std::string>) s += v;
+									if constexpr (std::is_same_v<TData, std::string>) s += v;
 									else s += std::to_string(v);
 								}
 								return s;
 							}
 	private:
-		void				setValueInternal(const std::array<T, S>& aValue)
+		void				setValueInternal(const std::array<TData, S>& aValue)
 							{
 								if (mLocked || isReadOnly()) return;
 								mValue = aValue;
@@ -186,7 +226,7 @@ public:
 							{
 								if (mLocked || isReadOnly()) return;
 								// empty string only allowed for bool and string
-								if constexpr (!std::is_same_v<T, bool> && !std::is_same_v<T, std::string>) if (aString.empty()) return;
+								if constexpr (!std::is_same_v<TData, bool> && !std::is_same_v<TData, std::string>) if (aString.empty()) return;
 
 								size_t count = 0;
 								size_t current = 0;
@@ -198,10 +238,10 @@ public:
 
 									if (count > mValue.size() - 1) break;
 
-									if constexpr (std::is_same_v<T, float>) mValue.at(count) = std::stof(token);
-									else if constexpr (std::is_same_v<T, int>) mValue.at(count) = std::stoi(token);
-									else if constexpr (std::is_same_v<T, std::string>) mValue.at(count) = token;
-									else if constexpr (std::is_same_v<T, bool>) {
+									if constexpr (std::is_same_v<TData, float>) mValue.at(count) = std::stof(token);
+									else if constexpr (std::is_same_v<TData, int>) mValue.at(count) = std::stoi(token);
+									else if constexpr (std::is_same_v<TData, std::string>) mValue.at(count) = token;
+									else if constexpr (std::is_same_v<TData, bool>) {
 										if (token.empty()) mValue.at(count) = true;
 										else {
 											bool bn, bs;
@@ -214,13 +254,10 @@ public:
 								} while (pos != std::string::npos);
 
 								// check limits
-								if constexpr (!std::is_same_v<T, std::string>) {
-									if (mLimits.has_value()) {
-										for (uint32_t i = 0; i < size(); i++)
-										{
-											if (mValue[i] < mLimits.value().first[i]) mValue[i] = mLimits.value().first[i];
-											if (mValue[i] > mLimits.value().second[i]) mValue[i] = mLimits.value().second[i];
-										}
+								if constexpr (!std::is_same_v<TData, std::string>) {
+									for (uint32_t i = 0; i < size(); i++)
+									{
+										mValue[i] = mLimits.limit(i, mValue[i]);
 									}
 								}
 
@@ -229,9 +266,9 @@ public:
 							}
 
 		static constexpr char*	mDelimiter = ",";
-		const std::function<void(const std::array<T, S>&)> mCallback;
+		const std::function<void(const std::array<TData, S>&)> mCallback;
 		bool				mCallbackCharged;
-		std::array<T, S>	mValue;
-		std::optional<std::pair<std::array<T, S >, std::array<T, S >>>	mLimits;
+		std::array<TData, S>	mValue;
+		TLimitsData	mLimits;
 	};
 };
