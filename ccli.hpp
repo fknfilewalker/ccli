@@ -48,13 +48,13 @@ public:
 		const DecisionType decision{ Continue };
 	};
 
-	class var_base;
-	static void parseArgs(int aArgc, const char* const aArgv[]);
-	static void loadConfig(const std::string& aCfgFile);
-	static void writeConfig(const std::string& aCfgFile);
+	class VarBase;
+	static void parseArgs(int argc, const char* const argv[]);
+	static void loadConfig(const std::string& cfgFile);
+	static void writeConfig(const std::string& cfgFile);
 	static void executeCallbacks();
 	static std::deque<std::string> checkErrors();
-	static IterationDecision forEachVar(const std::function<IterationDecision(var_base&, size_t)>&);
+	static IterationDecision forEachVar(const std::function<IterationDecision(VarBase&, size_t)>&);
 
 	enum Flag
 	{
@@ -66,17 +66,17 @@ public:
 		MANUAL_EXEC = (1 << 4)	// execute callback only when executeCallback/executeCallbacks is called
 	};
 
-	class var_base
+	class VarBase
 	{
 	public:
-		var_base(std::string_view shortName, std::string_view longName, uint32_t flags,
+		VarBase(std::string_view shortName, std::string_view longName, uint32_t flags,
 		         std::string_view description, bool hasCallback);
-		virtual ~var_base();
+		virtual ~VarBase();
 
-		var_base(const var_base&) = delete;
-		var_base(var_base&&) = delete;
-		var_base& operator=(const var_base&) = delete;
-		var_base& operator=(var_base&&) = delete;
+		VarBase(const VarBase&) = delete;
+		VarBase(VarBase&&) = delete;
+		VarBase& operator=(const VarBase&) = delete;
+		VarBase& operator=(VarBase&&) = delete;
 
 		[[nodiscard]] const std::string& getLongName() const;
 		[[nodiscard]] const std::string& getShortName() const;
@@ -129,14 +129,14 @@ public:
 	struct MaxLimit
 	{
 		template <typename T>
-		static T apply(T x) { return x > Value ? Value : x; }
+		static T apply(T x) { return x > static_cast<T>(Value) ? static_cast<T>(Value) : x; }
 	};
 
 	template <auto Value>
 	struct MinLimit
 	{
 		template <typename T>
-		static T apply(T x) { return x < Value ? Value : x; }
+		static T apply(T x) { return x < static_cast<T>(Value) ? static_cast<T>(Value) : x; }
 	};
 
 
@@ -178,26 +178,26 @@ public:
 		size_t S = 1,
 		typename... TLimits
 	>
-	class var final : public var_base
+	class Var final : public VarBase
 	{
 	public:
 		using TStorage = VariableSizedData<TData, S>;
-		static_assert(std::is_integral_v<TData> || std::is_floating_point_v<TData> || std::is_same_v<TData, std::string>
+		static_assert(std::disjunction_v<std::is_integral<TData>, std::is_floating_point<TData>, std::is_same<TData, std::string>>
 			, "Type must be integral, floating-point or string");
 		static_assert((!std::is_same_v<TData, std::string> && !std::is_same_v<TData, bool>) || sizeof...(TLimits) == 0,
 			"String and boolean values may not have limits");
 
-		var(const std::string_view shortName, const std::string_view longName, const TStorage& value = {},
+		Var(const std::string_view shortName, const std::string_view longName, const TStorage& value = {},
 		    const uint32_t flags = NONE, const std::string_view description = {},
-		    const std::function<void(const std::array<TData, S>&)> aCallback = {})
-			: var_base(shortName, longName, flags, description, aCallback != nullptr),
-				_callback{ aCallback }, _callbackCharged{ false }, _value{ value } {}
+		    const std::function<void(const std::array<TData, S>&)> callback = {})
+			: VarBase(shortName, longName, flags, description, callback != nullptr),
+				_callback{ callback }, _callbackCharged{ false }, _value{ value } {}
 
-		~var() override = default;
-		var(const var&) = delete;
-		var(var&&) = delete;
-		var& operator=(const var&) = delete;
-		var& operator=(var&&) = delete;
+		~Var() override = default;
+		Var(const Var&) = delete;
+		Var(Var&&) = delete;
+		Var& operator=(const Var&) = delete;
+		Var& operator=(Var&&) = delete;
 
 		auto& getValue() { return _value.mData; }
 
