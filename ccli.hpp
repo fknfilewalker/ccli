@@ -156,6 +156,10 @@ public:
 	template<typename TData>
 	struct VariableSizedData<TData, 1> {
 		VariableSizedData() = default;
+
+		template<typename U, typename = std::enable_if_t<std::is_same_v<TData, std::string>>>
+		VariableSizedData(const U& d) : mData{ d } {}
+
 		VariableSizedData(const TData& d) : mData{ d } {}
 
 		TData mData;
