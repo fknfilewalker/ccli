@@ -89,6 +89,8 @@ int main(int argc, char* argv[]) {
 	ccli::var<float, 4, ccli::MaxLimit<1.0>, ccli::MinLimit<-1>> float_var1("f1", "float1", {0}, ccli::NONE, "First bool var");
 	ccli::var<float, 4> float_var2("f2", "float2", {0}, ccli::NONE, "First bool var");
 	ccli::var<float, 2> var_test("t", "test", { 100, 200 }, ccli::CONFIG_RDWR);
+	ccli::var<short, 1, ccli::MaxLimit<500>> short_var("s", "short", 0);
+	ccli::var<bool> bool_var("b", "bool1", false);
 	ccli::parseArgs(argc, argv);
 	ccli::loadConfig("test.cfg");
 	var_test.setValue({ 200, 200 });

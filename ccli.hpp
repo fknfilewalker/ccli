@@ -101,8 +101,8 @@ public:
 	protected:
 		virtual void				setValueStringInternal(const std::string& aString) = 0;
 
-		static int parseInt(std::string_view);
-		static float parseFloat(std::string_view);
+		static long long parseIntegral(std::string_view);
+		static double parseDouble(std::string_view);
 		static bool parseBool(std::string_view);
 
 		friend class ccli;
@@ -124,7 +124,7 @@ public:
 	struct MinLimit {
 		template<typename T>
 		static T apply(T x) { return x < Value ? Value : x; }
-	};;
+	};
 
 
 	template<typename TData, size_t S>
@@ -165,7 +165,7 @@ public:
 	class var final : public var_base {
 	public:
 		using TStorage = VariableSizedData<TData, S>;
-		static_assert(std::is_same_v<TData, int> || std::is_same_v<TData, float> || std::is_same_v<TData, bool> || std::is_same_v<TData, std::string>, "Type must be bool, int, float or string");
+		static_assert(std::is_integral_v<TData> || std::is_floating_point_v<TData> || std::is_same_v<TData, std::string>, "Type must be integral, floating-point or string");
 		static_assert((!std::is_same_v<TData, std::string> && !std::is_same_v<TData, bool>) || sizeof...(TLimits) == 0, "String and boolean values may not have limits");
 
 							var(const std::string& aShortName, const std::string& aLongName, const TStorage& aValue = {}, 
@@ -204,8 +204,8 @@ public:
 		bool				isCallbackCharged() const { return mCallbackCharged; }
 
 		bool				isBool() const override { return std::is_same_v<TData, bool>; }
-		bool				isInt() const override { return std::is_same_v<TData, int>; }
-		bool				isFloat() const override { return std::is_same_v<TData, float>; }
+		bool				isInt() const override { return std::is_integral_v<TData>; }
+		bool				isFloat() const override { return std::is_floating_point_v<TData>; }
 		bool				isString() const override { return std::is_same_v<TData, std::string>; }
 
 		void				setValueString(const std::string& aString) override
@@ -265,14 +265,14 @@ public:
 
 									if (count > mValue.size() - 1) break;
 
-									if constexpr (std::is_same_v<TData, float>) mValue.at(count) = parseFloat(token);
-									else if constexpr (std::is_same_v<TData, int>) mValue.at(count) = parseInt(token);
-									else if constexpr (std::is_same_v<TData, std::string>) mValue.at(count) = token;
+									if constexpr (std::is_floating_point_v<TData>) mValue.at(count) = parseDouble(token);
 									else if constexpr (std::is_same_v<TData, bool>) mValue.at(count) = parseBool(token);
+									else if constexpr (std::is_integral_v<TData>) mValue.at(count) = parseIntegral(token);
+									else if constexpr (std::is_same_v<TData, std::string>) mValue.at(count) = token;
 									count++;
 								} while (pos != std::string::npos);
 
-								if constexpr (std::is_same_v<TData, float> || std::is_same_v<TData, int>) {
+								if constexpr (!std::is_same_v<TData, std::string>) {
 									for (uint32_t i = 0; i < size(); i++)
 									{
 										mValue.at(i) = LimitApplier<TLimits...>::apply(mValue.at(i));
