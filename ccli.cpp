@@ -34,11 +34,9 @@ SOFTWARE.
 #include <filesystem>
 #include <charconv>
 
-constexpr char configDelimiter = '=';
-constexpr uint32_t helpColumnWidthShort = 20;
-constexpr uint32_t helpColumnWidthLong = 20;
-
-namespace {
+namespace
+{
+	constexpr char configDelimiter = '=';
 	/*
 	** errors
 	*/
@@ -47,6 +45,7 @@ namespace {
 		static std::deque<std::string> deque;
 		return deque;
 	}
+
 	/*
 	** vars
 	*/
@@ -56,11 +55,13 @@ namespace {
 		static std::map<std::string, ccli::var_base*> map;
 		return map;
 	}
+
 	std::map<std::string, ccli::var_base*>& getShortNameVarMap()
 	{
 		static std::map<std::string, ccli::var_base*> map;
 		return map;
 	}
+
 	ccli::var_base* findVarByLongName(const std::string& aLongName)
 	{
 		std::map<std::string, ccli::var_base*>& map = getLongNameVarMap();
@@ -68,6 +69,7 @@ namespace {
 		if (it != map.end()) return it->second;
 		return nullptr;
 	}
+
 	ccli::var_base* findVarByShortName(const std::string& aShortName)
 	{
 		std::map<std::string, ccli::var_base*>& map = getShortNameVarMap();
@@ -75,29 +77,36 @@ namespace {
 		if (it != map.end()) return it->second;
 		return nullptr;
 	}
+
 	void addToVarList(const std::string& aLongName, const std::string& aShortName, ccli::var_base* const aVar)
 	{
 		std::map<std::string, ccli::var_base*>& mapLong = getLongNameVarMap();
 		std::map<std::string, ccli::var_base*>& mapShort = getShortNameVarMap();
-		if (!aLongName.empty()) {
+		if (!aLongName.empty())
+		{
 			const bool inserted = mapLong.insert(std::pair<std::string, ccli::var_base*>(aLongName, aVar)).second;
 			if (!inserted) getErrorDeque().emplace_back("Long identifier '--" + aLongName + "' already exists");
 		}
-		if (!aShortName.empty()) {
+		if (!aShortName.empty())
+		{
 			const bool inserted = mapShort.insert(std::pair<std::string, ccli::var_base*>(aShortName, aVar)).second;
 			if (!inserted) getErrorDeque().emplace_back("Short identifier '-" + aShortName + "' already exists");
 		}
 	}
-	void removeFromVarList(const std::string& aLongName, const std::string& aShortName, const ccli::var_base* const aVar)
+
+	void removeFromVarList(const std::string& aLongName, const std::string& aShortName,
+	                       const ccli::var_base* const aVar)
 	{
 		std::map<std::string, ccli::var_base*>& mapLong = getLongNameVarMap();
 		std::map<std::string, ccli::var_base*>& mapShort = getShortNameVarMap();
 
-		if (!aLongName.empty()) {
+		if (!aLongName.empty())
+		{
 			const auto it = mapLong.find(aLongName);
 			if (it != mapLong.end() && it->second == aVar) mapLong.erase(it);
 		}
-		if (!aShortName.empty()) {
+		if (!aShortName.empty())
+		{
 			const auto it = mapShort.find(aShortName);
 			if (it != mapShort.end() && it->second == aVar) mapShort.erase(it);
 		}
@@ -112,11 +121,13 @@ namespace {
 		static std::set<ccli::var_base*> set;
 		return set;
 	}
+
 	void addToCallbackSet(ccli::var_base* aVar)
 	{
 		auto& set = getCallbackSet();
 		set.insert(aVar);
 	}
+
 	void removeFromCallbackSet(ccli::var_base* aVar)
 	{
 		auto& set = getCallbackSet();
@@ -132,24 +143,29 @@ namespace {
 		static std::map<std::string, std::string> map;
 		return map;
 	}
-	bool doesConfigVarNeedUpdate(std::map<std::string, std::string>& aMap, const std::string& aToken, const std::string& aValue)
+
+	bool doesConfigVarNeedUpdate(std::map<std::string, std::string>& aMap, const std::string& aToken,
+	                             const std::string& aValue)
 	{
 		const auto it = aMap.find(aToken);
-		if (it != aMap.end() && it->second != aValue) {
+		if (it != aMap.end() && it->second != aValue)
+		{
 			it->second = aValue;
 			return true;
 		}
 		if (it == aMap.end())
 		{
-			aMap.insert({ aToken, aValue });
+			aMap.insert({aToken, aValue});
 			return true;
 		}
 		return false;
 	}
+
 	bool writeConfigFile(std::string const& aFilename, std::string const& aContent)
 	{
 		std::ofstream file(aFilename, std::ios::out | std::ios::binary);
-		if (!file.is_open()) {
+		if (!file.is_open())
+		{
 			getErrorDeque().emplace_back("Could not open file '" + aFilename + "' for writing");
 			return false;
 		}
@@ -162,22 +178,27 @@ namespace {
 void ccli::parseArgs(const int aArgc, const char* const aArgv[])
 {
 	std::deque<std::string> args;
-	for (int i = 0; i < aArgc; i++) {
+	for (int i = 0; i < aArgc; i++)
+	{
 		args.emplace_back(aArgv[i]);
 	}
-	if(!args.empty()) {
+	if (!args.empty())
+	{
 		// check if first arg is exe
-		if(std::filesystem::exists(std::filesystem::status(args.front()))) {
+		if (std::filesystem::exists(std::filesystem::status(args.front())))
+		{
 			args.pop_front();
 		}
 	}
-	
+
 	var_base* var = nullptr;
-	while (!args.empty()) {
+	while (!args.empty())
+	{
 		const auto& arg = args.front();
 		const bool shortName = arg.size() >= 2 ? arg[0] == '-' && isalpha(arg[1]) : false;
 		const bool longName = arg.size() >= 2 ? arg[0] == '-' && arg[1] == '-' : false;
-		if (shortName || longName) {
+		if (shortName || longName)
+		{
 			// arg without value (cleared otherwise)
 			if (var && var->isBool() && var->size() == 1) var->setValueStringInternal("");
 			// find new arg
@@ -187,7 +208,8 @@ void ccli::parseArgs(const int aArgc, const char* const aArgv[])
 			if (var == nullptr) getErrorDeque().emplace_back("'" + arg + "' not found");
 		}
 		// var found
-		else if (var) {
+		else if (var)
+		{
 			var->setValueStringInternal(arg);
 			var = nullptr;
 		}
@@ -205,23 +227,26 @@ void ccli::loadConfig(const std::string& aCfgFile)
 	std::ifstream f(aCfgFile);
 
 	// load config line by line
-	while (f.good()) {
+	while (f.good())
+	{
 		std::string line;
 		std::getline(f, line);
 		// remove quotation marks etc
-		line.erase(std::remove(line.begin(), line.end(), '\"'), line.end());
-		line.erase(std::remove(line.begin(), line.end(), '\''), line.end());
+		std::erase(line, '\"');
+		std::erase(line, '\'');
 		const size_t pos = line.find(configDelimiter);
-		if (pos != std::string::npos) {
+		if (pos != std::string::npos)
+		{
 			std::string token = line.substr(0, pos);
 			std::string value = line.substr(pos + 1, line.size());
 			var_base* var = findVarByLongName(token);
 			// also check rd
-			if (var && var->isConfigRead()) {
+			if (var && var->isConfigRead())
+			{
 				var->setValueString(value);
-				if (var->isConfigReadWrite()) configMap.insert({ token, value });
+				if (var->isConfigReadWrite()) configMap.insert({token, value});
 			}
-			else configMap.insert({ token, value });
+			else configMap.insert({token, value});
 		}
 	}
 	f.close();
@@ -235,7 +260,8 @@ void ccli::writeConfig(const std::string& aCfgFile)
 	// update vars
 	for (const auto& [fst, snd] : map)
 	{
-		if (snd->isConfigReadWrite()) {
+		if (snd->isConfigReadWrite())
+		{
 			// also check if rdwr
 			write |= doesConfigVarNeedUpdate(configMap, fst, snd->getValueString());
 		}
@@ -243,7 +269,8 @@ void ccli::writeConfig(const std::string& aCfgFile)
 	if (!write) return;
 	// create output string
 	std::string out;
-	for (const auto& [fst, snd] : configMap) {
+	for (const auto& [fst, snd] : configMap)
+	{
 		out += fst + configDelimiter;
 		out += "\"" + snd + "\"\n";
 	}
@@ -267,13 +294,15 @@ std::deque<std::string> ccli::checkErrors()
 	return out;
 }
 
-ccli::IterationDecision ccli::forEachVar(std::function<IterationDecision(var_base&, size_t)> callback)
+ccli::IterationDecision ccli::forEachVar(const std::function<IterationDecision(var_base&, size_t)>& callback)
 {
 	size_t idx = 0;
-	auto& map = getShortNameVarMap();
-	for (auto& pair : map) {
-		auto result= callback(*pair.second, idx++);
-		if (result == IterationDecision::Break) {
+	const auto& map = getShortNameVarMap();
+	for (auto& pair : map)
+	{
+		auto result = callback(*pair.second, idx++);
+		if (result == IterationDecision::Break)
+		{
 			return result;
 		}
 	}
@@ -285,13 +314,13 @@ ccli::IterationDecision ccli::forEachVar(std::function<IterationDecision(var_bas
 ** var_base
 */
 ccli::var_base::var_base(std::string aShortName, std::string aLongName, uint32_t aFlags,
-	std::string aDescription, const bool aHasCallback) :
+                         std::string aDescription, const bool aHasCallback) :
 	mShortName(std::move(aShortName)), mLongName(std::move(aLongName)),
 	mDescription(std::move(aDescription)), mFlags(aFlags), mHasCallback(aHasCallback), mLocked(false)
 {
 	assert(!mLongName.empty() || !mShortName.empty());
 	addToVarList(mLongName, mShortName, this);
-	if(mHasCallback) addToCallbackSet(this);
+	if (mHasCallback) addToCallbackSet(this);
 	/*if (mLongName.empty() && (isConfigRead() || isConfigReadWrite())) {
 		getErrorDeque().emplace_back("Config requieres long name \"\'-" + mShortName + "\'");
 	}*/
@@ -304,70 +333,99 @@ ccli::var_base::~var_base()
 }
 
 const std::string& ccli::var_base::getLongName() const
-{ return mLongName; }
+{
+	return mLongName;
+}
 
 const std::string& ccli::var_base::getShortName() const
-{ return mShortName; }
+{
+	return mShortName;
+}
 
 const std::string& ccli::var_base::getDescription() const
-{ return mDescription; }
+{
+	return mDescription;
+}
 
 bool ccli::var_base::hasCallback() const
-{ return mHasCallback; }
+{
+	return mHasCallback;
+}
 
 bool ccli::var_base::isCliOnly() const
-{ return mFlags & CLI_ONLY; }
+{
+	return mFlags & CLI_ONLY;
+}
 
 bool ccli::var_base::isReadOnly() const
-{ return mFlags & READ_ONLY; }
+{
+	return mFlags & READ_ONLY;
+}
 
 bool ccli::var_base::isConfigRead() const
-{ return !mLongName.empty() && mFlags & CONFIG_RD; }
+{
+	return !mLongName.empty() && mFlags & CONFIG_RD;
+}
 
 bool ccli::var_base::isConfigReadWrite() const
-{ return !mLongName.empty() && mFlags & CONFIG_RDWR; }
+{
+	return !mLongName.empty() && mFlags & CONFIG_RDWR;
+}
 
 bool ccli::var_base::isCallbackAutoExecuted() const
-{ return !(mFlags & MANUAL_EXEC); }
+{
+	return !(mFlags & MANUAL_EXEC);
+}
 
 bool ccli::var_base::locked() const
-{ return mLocked; }
+{
+	return mLocked;
+}
 
 void ccli::var_base::locked(const bool aLocked)
-{ mLocked = aLocked; }
+{
+	mLocked = aLocked;
+}
 
-template<typename T>
-T parseUsingFromChars(std::string_view token) {
+template <typename T>
+T parseUsingFromChars(std::string_view token)
+{
 	T value;
 	auto result = std::from_chars(token.data(), token.data() + token.size(), value);
-	if (result.ec == std::errc::invalid_argument) {
-		getErrorDeque().emplace_back("'" + std::string{ token } + "' not convertible");
+	if (result.ec == std::errc::invalid_argument)
+	{
+		getErrorDeque().emplace_back("'" + std::string{token} + "' not convertible");
 	}
 
 	return value;
 }
 
-long long ccli::var_base::parseIntegral(std::string_view token) {
+long long ccli::var_base::parseIntegral(const std::string_view token)
+{
 	return parseUsingFromChars<long long>(token);
 }
 
-double ccli::var_base::parseDouble(std::string_view token) {
+double ccli::var_base::parseDouble(const std::string_view token)
+{
 	return parseUsingFromChars<double>(token);
 }
 
-bool ccli::var_base::parseBool(std::string_view token) {
-	if (token.empty()) {
+bool ccli::var_base::parseBool(const std::string_view token)
+{
+	if (token.empty())
+	{
 		return true;
 	}
 
 	bool value;
-	std::string copiedToken{ token };
+	const std::string copiedToken{token};
 
-	std::istringstream{ copiedToken } >> std::boolalpha >> value;
-	if (value) {
+	std::istringstream{copiedToken} >> std::boolalpha >> value;
+	if (value)
+	{
 		return true;
 	}
 
-	std::istringstream{ copiedToken } >> value;
+	std::istringstream{copiedToken} >> value;
 	return value;
 }
