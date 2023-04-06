@@ -393,7 +393,7 @@ T parseUsingFromChars(std::string_view token)
 	auto result = std::from_chars(token.data(), token.data() + token.size(), value);
 	if (result.ec == std::errc::invalid_argument)
 	{
-		getErrorDeque().emplace_back("'" + std::string{token} + "' not convertible");
+		getErrorDeque().emplace_back("'" + std::string{ token } + "' not convertible");
 	}
 
 	return value;
