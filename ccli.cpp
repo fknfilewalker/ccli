@@ -1,8 +1,7 @@
 /*
 MIT License
 
-Copyright(c) 2022 Lukas Lipp
-Copyright(c) 2023 Matthias Preymann
+Copyright(c) 2022 Lukas Lipp, Matthias Preymann
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this softwareand associated documentation files(the "Software"), to deal
@@ -62,52 +61,52 @@ namespace
 		return map;
 	}
 
-	ccli::var_base* findVarByLongName(const std::string_view aLongName)
+	ccli::var_base* findVarByLongName(const std::string_view longName)
 	{
 		std::map<std::string, ccli::var_base*, std::less<>>& map = getLongNameVarMap();
-		const auto it = map.find(aLongName);
+		const auto it = map.find(longName);
 		if (it != map.end()) return it->second;
 		return nullptr;
 	}
 
-	ccli::var_base* findVarByShortName(const std::string_view aShortName)
+	ccli::var_base* findVarByShortName(const std::string_view shortName)
 	{
 		std::map<std::string, ccli::var_base*, std::less<>>& map = getShortNameVarMap();
-		const auto it = map.find(aShortName);
+		const auto it = map.find(shortName);
 		if (it != map.end()) return it->second;
 		return nullptr;
 	}
 
-	void addToVarList(const std::string& aLongName, const std::string& aShortName, ccli::var_base* const aVar)
+	void addToVarList(const std::string& longName, const std::string& shortName, ccli::var_base* const aVar)
 	{
 		std::map<std::string, ccli::var_base*, std::less<>>& mapLong = getLongNameVarMap();
 		std::map<std::string, ccli::var_base*, std::less<>>& mapShort = getShortNameVarMap();
-		if (!aLongName.empty())
+		if (!longName.empty())
 		{
-			const bool inserted = mapLong.insert(std::pair<std::string, ccli::var_base*>(aLongName, aVar)).second;
-			if (!inserted) getErrorDeque().emplace_back("Long identifier '--" + aLongName + "' already exists");
+			const bool inserted = mapLong.insert(std::pair<std::string, ccli::var_base*>(longName, aVar)).second;
+			if (!inserted) getErrorDeque().emplace_back("Long identifier '--" + longName + "' already exists");
 		}
-		if (!aShortName.empty())
+		if (!shortName.empty())
 		{
-			const bool inserted = mapShort.insert(std::pair<std::string, ccli::var_base*>(aShortName, aVar)).second;
-			if (!inserted) getErrorDeque().emplace_back("Short identifier '-" + aShortName + "' already exists");
+			const bool inserted = mapShort.insert(std::pair<std::string, ccli::var_base*>(shortName, aVar)).second;
+			if (!inserted) getErrorDeque().emplace_back("Short identifier '-" + shortName + "' already exists");
 		}
 	}
 
-	void removeFromVarList(const std::string_view aLongName, const std::string_view aShortName,
+	void removeFromVarList(const std::string_view longName, const std::string_view shortName,
 	                       const ccli::var_base* const aVar)
 	{
 		std::map<std::string, ccli::var_base*, std::less<>>& mapLong = getLongNameVarMap();
 		std::map<std::string, ccli::var_base*, std::less<>>& mapShort = getShortNameVarMap();
 
-		if (!aLongName.empty())
+		if (!longName.empty())
 		{
-			const auto it = mapLong.find(aLongName);
+			const auto it = mapLong.find(longName);
 			if (it != mapLong.end() && it->second == aVar) mapLong.erase(it);
 		}
-		if (!aShortName.empty())
+		if (!shortName.empty())
 		{
-			const auto it = mapShort.find(aShortName);
+			const auto it = mapShort.find(shortName);
 			if (it != mapShort.end() && it->second == aVar) mapShort.erase(it);
 		}
 	}
@@ -313,78 +312,78 @@ ccli::IterationDecision ccli::forEachVar(const std::function<IterationDecision(v
 /*
 ** var_base
 */
-ccli::var_base::var_base(const std::string_view aShortName, const std::string_view aLongName, const uint32_t aFlags,
-	const std::string_view aDescription, const bool aHasCallback) :
-	mShortName{ aShortName }, mLongName{ aLongName },
-	mDescription{ aDescription }, mFlags{ aFlags }, mHasCallback{ aHasCallback }, mLocked{ false }
+ccli::var_base::var_base(const std::string_view shortName, const std::string_view longName, const uint32_t flags,
+	const std::string_view description, const bool hasCallback) :
+	_shortName{ shortName }, _longName{ longName },
+	_description{ description }, _flags{ flags }, _hasCallback{ hasCallback }, _locked{ false }
 {
-	assert(!mLongName.empty() || !mShortName.empty());
-	addToVarList(mLongName, mShortName, this);
-	if (mHasCallback) addToCallbackSet(this);
-	/*if (mLongName.empty() && (isConfigRead() || isConfigReadWrite())) {
-		getErrorDeque().emplace_back("Config requieres long name \"\'-" + mShortName + "\'");
+	assert(!_longName.empty() || !_shortName.empty());
+	addToVarList(_longName, _shortName, this);
+	if (_hasCallback) addToCallbackSet(this);
+	/*if (_longName.empty() && (isConfigRead() || isConfigReadWrite())) {
+		getErrorDeque().emplace_back("Config requieres long name \"\'-" + _shortName + "\'");
 	}*/
 }
 
 ccli::var_base::~var_base()
 {
-	removeFromVarList(mLongName, mShortName, this);
-	if (mHasCallback) removeFromCallbackSet(this);
+	removeFromVarList(_longName, _shortName, this);
+	if (_hasCallback) removeFromCallbackSet(this);
 }
 
 const std::string& ccli::var_base::getLongName() const
 {
-	return mLongName;
+	return _longName;
 }
 
 const std::string& ccli::var_base::getShortName() const
 {
-	return mShortName;
+	return _shortName;
 }
 
 const std::string& ccli::var_base::getDescription() const
 {
-	return mDescription;
+	return _description;
 }
 
 bool ccli::var_base::hasCallback() const
 {
-	return mHasCallback;
+	return _hasCallback;
 }
 
 bool ccli::var_base::isCliOnly() const
 {
-	return mFlags & CLI_ONLY;
+	return _flags & CLI_ONLY;
 }
 
 bool ccli::var_base::isReadOnly() const
 {
-	return mFlags & READ_ONLY;
+	return _flags & READ_ONLY;
 }
 
 bool ccli::var_base::isConfigRead() const
 {
-	return !mLongName.empty() && mFlags & CONFIG_RD;
+	return !_longName.empty() && _flags & CONFIG_RD;
 }
 
 bool ccli::var_base::isConfigReadWrite() const
 {
-	return !mLongName.empty() && mFlags & CONFIG_RDWR;
+	return !_longName.empty() && _flags & CONFIG_RDWR;
 }
 
 bool ccli::var_base::isCallbackAutoExecuted() const
 {
-	return !(mFlags & MANUAL_EXEC);
+	return !(_flags & MANUAL_EXEC);
 }
 
 bool ccli::var_base::locked() const
 {
-	return mLocked;
+	return _locked;
 }
 
 void ccli::var_base::locked(const bool aLocked)
 {
-	mLocked = aLocked;
+	_locked = aLocked;
 }
 
 template <typename T>
