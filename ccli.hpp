@@ -301,7 +301,7 @@ public:
 								if (isCallbackAutoExecuted()) executeCallback();
 							}
 
-		static constexpr char*		mDelimiter = ",";
+		static constexpr const char* mDelimiter = ",";
 		const std::function<void(const std::array<TData, S>&)> mCallback;
 		bool		mCallbackCharged;
 		TStorage	mValue;
