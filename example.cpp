@@ -103,5 +103,8 @@ int main(int argc, char* argv[]) {
 
 	std::cout << "repr: " << float_var1.getValueString() << std::endl;
 
+	ccli::var<std::string> string_var("str1", "string1", "A cool value");
+	ccli::var<std::string> string_var2(std::string{ "str2" }, "string2", "Another cool value");
+
 	return 0;
 }
