@@ -30,6 +30,7 @@ SOFTWARE.
 #include <functional>
 #include <sstream>
 #include <deque>
+#include <optional>
 
 class ccli
 {
@@ -40,12 +41,12 @@ public:
 
 		IterationDecision() = default;
 
-		IterationDecision(DecisionType d) : decision{d}
+		IterationDecision(DecisionType d) : decision{ d }
 		{
 		}
 
 		bool operator==(DecisionType d) const { return decision == d; }
-		const DecisionType decision{Continue};
+		const DecisionType decision{ Continue };
 	};
 
 	class var_base;
@@ -101,6 +102,11 @@ public:
 		[[nodiscard]] virtual bool isFloat() const = 0;
 		[[nodiscard]] virtual bool isString() const = 0;
 
+		[[nodiscard]] virtual std::optional<bool> asBool(size_t = 0) const = 0;
+		[[nodiscard]] virtual std::optional<long long> asInt(size_t = 0) const = 0;
+		[[nodiscard]] virtual std::optional<double> asFloat(size_t = 0) const = 0;
+		[[nodiscard]] virtual std::optional<std::string_view> asString(size_t = 0) const = 0;
+
 		[[nodiscard]] bool locked() const;
 		void locked(bool aLocked);
 
@@ -143,6 +149,7 @@ public:
 
 		static constexpr auto size() { return S; }
 		auto& at(size_t idx) { return mData.at(idx); }
+		const auto& at(size_t idx) const { return mData.at(idx); }
 		auto begin() { return mData.begin(); }
 		auto end() { return mData.end(); }
 		const std::array<TData, S>& asArray() const { return mData; }
@@ -161,9 +168,10 @@ public:
 
 		static constexpr auto size() { return 1; }
 		auto& at(size_t idx) { return mData; }
+		const auto& at(size_t idx) const { return mData; }
 		auto* begin() { return &mData; }
 		auto* end() { return &mData + 1; }
-		std::array<TData, 1> asArray() const { return {mData}; }
+		std::array<TData, 1> asArray() const { return { mData }; }
 	};
 
 	template <
@@ -220,7 +228,53 @@ public:
 		[[nodiscard]] bool isFloat() const override { return std::is_floating_point_v<TData>; }
 		[[nodiscard]] bool isString() const override { return std::is_same_v<TData, std::string>; }
 
-		void setValueString(const std::string_view aString) override
+		[[nodiscard]] std::optional<bool> asBool(size_t idx= 0) const override
+		{
+			if constexpr (std::is_same_v<TData, std::string>)
+			{
+				return {};
+			}
+			else
+			{
+				return { static_cast<bool>(mValue.at(idx)) };
+			}
+		}
+
+		[[nodiscard]] std::optional<long long> asInt(size_t idx= 0) const override
+		{
+			if constexpr (std::is_same_v<TData, std::string>)
+			{
+				return {};
+			}
+			else
+			{
+				return { static_cast<long long>(mValue.at(idx)) };
+			}
+		}
+
+		[[nodiscard]] std::optional<double> asFloat(size_t idx= 0) const override
+		{
+			if constexpr (std::is_same_v<TData, std::string>)
+			{
+				return {};
+			}
+			else
+			{
+				return { static_cast<double>(mValue.at(idx)) };
+			}
+		}
+
+		[[nodiscard]] std::optional<std::string_view> asString(size_t idx= 0) const override
+		{
+			if constexpr (std::is_same_v<TData, std::string>)
+			{
+				return { std::string_view{ mValue.at(idx) } };
+			}
+
+			return {};
+		}
+
+		void setValueString(std::string_view aString) override
 		{
 			if (isCliOnly()) return;
 			setValueStringInternal(aString);
