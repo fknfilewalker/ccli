@@ -48,7 +48,6 @@ public:
 	static void						loadConfig(const std::string& aCfgFile);
 	static void						writeConfig(const std::string& aCfgFile);
 	static void						executeCallbacks();
-	static std::deque<std::string>	getHelp();
 	static std::deque<std::string>  checkErrors();
 	static IterationDecision		forEachVar(std::function<IterationDecision(var_base&, size_t)>);
 
