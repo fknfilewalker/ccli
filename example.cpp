@@ -106,5 +106,11 @@ int main(int argc, char* argv[]) {
 	ccli::var<std::string> string_var("str1", "string1", "A cool value");
 	ccli::var<std::string> string_var2(std::string{ "str2" }, "string2", "Another cool value");
 
+	std::cout << "Currently registerd variables..." << std::endl;
+	ccli::forEachVar([](ccli::var_base& var, size_t idx) -> ccli::IterationDecision {
+		std::cout << "... " << idx << " - " << var.getLongName() << " " << var.getValueString() << std::endl;
+		return {};
+	});
+
 	return 0;
 }

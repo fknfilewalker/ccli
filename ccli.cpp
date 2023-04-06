@@ -304,6 +304,20 @@ std::deque<std::string> ccli::checkErrors()
 	return out;
 }
 
+ccli::IterationDecision ccli::forEachVar(std::function<IterationDecision(var_base&, size_t)> callback)
+{
+	size_t idx = 0;
+	auto& map = getShortNameVarMap();
+	for (auto& pair : map) {
+		auto result= callback(*pair.second, idx++);
+		if (result == IterationDecision::Break) {
+			return result;
+		}
+	}
+
+	return IterationDecision::Continue;
+}
+
 /*
 ** var_base
 */

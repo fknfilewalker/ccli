@@ -35,12 +35,22 @@ SOFTWARE.
 class ccli
 {
 public:
+	struct IterationDecision {
+		enum DecisionType { Continue, Break };
+		IterationDecision() = default;
+		IterationDecision(DecisionType d) : decision{ d } {}
+		bool operator==(DecisionType d) const { return decision == d; }
+		const DecisionType decision{ Continue };
+	};
+
+	class var_base;
 	static void						parseArgs(int aArgc, const char* const aArgv[]);
 	static void						loadConfig(const std::string& aCfgFile);
 	static void						writeConfig(const std::string& aCfgFile);
 	static void						executeCallbacks();
 	static std::deque<std::string>	getHelp();
 	static std::deque<std::string>  checkErrors();
+	static IterationDecision		forEachVar(std::function<IterationDecision(var_base&, size_t)>);
 
 	enum Flag {
 		NONE						= (0 << 0),
