@@ -194,7 +194,7 @@ public:
 		Var& operator=(const Var&) = delete;
 		Var& operator=(Var&&) = delete;
 
-		auto& getValue() { return _value.mData; }
+		const auto& getValue() { return _value.mData; }
 		void setValue(const TStorage& aValue)
 		{
 			if (isCliOnly()) return;
