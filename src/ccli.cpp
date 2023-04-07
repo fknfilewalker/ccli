@@ -306,7 +306,7 @@ ccli::IterationDecision ccli::forEachVar(const std::function<IterationDecision(V
 ccli::VarBase::VarBase(const std::string_view shortName, const std::string_view longName, const uint32_t flags,
 	const std::string_view description, const bool hasCallback) :
 	_shortName{ shortName }, _longName{ longName },
-	_description{ description }, _flags{ flags }, _hasCallback{ hasCallback }, _locked{ false }
+	_description{ description }, _flags{ flags }, _hasCallback{ hasCallback }
 {
 	assert(!_longName.empty() || !_shortName.empty());
 	addToVarList(_longName, _shortName, this);
@@ -352,6 +352,11 @@ bool ccli::VarBase::isReadOnly() const noexcept
 	return _flags & READ_ONLY;
 }
 
+bool ccli::VarBase::isLocked() const noexcept
+{
+	return _flags & LOCKED;
+}
+
 bool ccli::VarBase::isConfigRead() const noexcept
 {
 	return !_longName.empty() && _flags & CONFIG_RD;
@@ -367,14 +372,10 @@ bool ccli::VarBase::isCallbackAutoExecuted() const noexcept
 	return !(_flags & MANUAL_EXEC);
 }
 
-bool ccli::VarBase::locked() const noexcept
-{
-	return _locked;
-}
-
 void ccli::VarBase::locked(const bool locked)
 {
-	_locked = locked;
+	if(locked) _flags = _flags | LOCKED;
+	else _flags = _flags ^ LOCKED;
 }
 
 template <typename T>
