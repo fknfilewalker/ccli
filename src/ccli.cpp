@@ -65,7 +65,7 @@ namespace
 
 	ccli::VarBase* findVarByShortName(const std::string_view shortName)
 	{
-		std::map<std::string, ccli::VarBase*, std::less<>>& map = getShortNameVarMap();
+		auto& map = getShortNameVarMap();
 		const auto it = map.find(shortName);
 		if (it != map.end()) return it->second;
 		return nullptr;
@@ -73,8 +73,8 @@ namespace
 
 	void addToVarList(const std::string& longName, const std::string& shortName, ccli::VarBase* const aVar)
 	{
-		std::map<std::string, ccli::VarBase*, std::less<>>& mapLong = getLongNameVarMap();
-		std::map<std::string, ccli::VarBase*, std::less<>>& mapShort = getShortNameVarMap();
+		auto& mapLong = getLongNameVarMap();
+		auto& mapShort = getShortNameVarMap();
 
 		std::optional<std::pair<MapType::iterator, bool>> pairShort;
 		std::optional<std::pair<MapType::iterator, bool>> pairLong;
@@ -101,8 +101,8 @@ namespace
 	void removeFromVarList(const std::string_view longName, const std::string_view shortName,
 		const ccli::VarBase* const aVar)
 	{
-		std::map<std::string, ccli::VarBase*, std::less<>>& mapLong = getLongNameVarMap();
-		std::map<std::string, ccli::VarBase*, std::less<>>& mapShort = getShortNameVarMap();
+		auto& mapLong = getLongNameVarMap();
+		auto& mapShort = getShortNameVarMap();
 
 		if (!longName.empty())
 		{
