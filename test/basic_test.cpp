@@ -80,7 +80,7 @@ void test2()
 		ccli::parseArgs(std::size(argv), argv);
 		assert(uvec3Var.getValue().at(0) == 5 && uvec3Var.getValue().at(1) == 6 && uvec3Var.getValue().at(2) == 7);
 		assert(stringVar.getValue().at(0) == "This is not a test" && stringVar.getValue().at(1) == "or is it");
-		assert(limitVar.getValue().at(0) == 2 && limitVar.getValue().at(1) == 1);
+		assert(limitVar.getValue().at(0) == 2 && limitVar.getValue().at(1) == 2);
 	}
 	catch (ccli::CCLIError& e) {
 		std::cout << "Caught error: " << e.message() << std::endl;
