@@ -212,8 +212,6 @@ public:
 		Var& operator=(const Var&) = delete;
 		Var& operator=(Var&&) = delete;
 
-		operator const TStorage& () const { return _value; }
-
 		void value(const TStorage& aValue)
 		{
 			if (isReadOnly() || isCliOnly() || isLocked()) return;
