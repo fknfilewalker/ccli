@@ -73,12 +73,12 @@ public:
 		VarBase& operator=(const VarBase&) = delete;
 		VarBase& operator=(VarBase&&) = delete;
 
-		[[nodiscard]] const std::string& getLongName() const noexcept;
-		[[nodiscard]] const std::string& getShortName() const noexcept;
-		[[nodiscard]] const std::string& getDescription() const noexcept;
+		[[nodiscard]] const std::string& longName() const noexcept;
+		[[nodiscard]] const std::string& shortName() const noexcept;
+		[[nodiscard]] const std::string& description() const noexcept;
 
-		virtual std::string getValueString() = 0;
-		virtual void setValueString(std::string_view aString) = 0;
+		virtual std::string valueString() = 0;
+		virtual void valueString(std::string_view string) = 0;
 
 		[[nodiscard]] bool hasCallback() const noexcept;
 		virtual bool executeCallback() = 0;
@@ -102,10 +102,10 @@ public:
 		[[nodiscard]] virtual std::optional<std::string_view> asString(size_t = 0) const = 0;
 
 		[[nodiscard]] bool locked() const noexcept;
-		void locked(bool aLocked);
+		void locked(bool locked);
 
 	protected:
-		virtual void setValueStringInternal(std::string_view aString) = 0;
+		virtual void setValueStringInternal(std::string_view string) = 0;
 
 		static long long parseIntegral(const VarBase&, std::string_view);
 		static double parseDouble(const VarBase&, std::string_view);
@@ -283,13 +283,13 @@ public:
 			return {};
 		}
 
-		void setValueString(const std::string_view string) override
+		void valueString(const std::string_view string) override
 		{
 			if (isCliOnly()) return;
 			setValueStringInternal(string);
 		}
 
-		std::string getValueString() override
+		std::string valueString() override
 		{
 			std::stringstream stream;
 			for (size_t i = 0; i != _value.size(); i++)

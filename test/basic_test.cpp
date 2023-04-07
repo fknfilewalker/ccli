@@ -123,14 +123,14 @@ int main(int argc, char* argv[]) {
 	std::cout << "Sizeof float_var1: " << sizeof(float_var1) << std::endl;
 	std::cout << "Sizeof float_var2: " << sizeof(float_var2) << std::endl;
 
-	std::cout << "repr: " << float_var1.getValueString() << std::endl;
+	std::cout << "repr: " << float_var1.valueString() << std::endl;
 
 	ccli::Var<std::string> string_var("str1", "string1", "A cool value");
 	ccli::Var<std::string> string_var2(std::string{ "str2" }, "string2", "Another cool value");
 
 	std::cout << "Currently registerd variables..." << std::endl;
 	ccli::forEachVar([](ccli::VarBase& var, size_t idx) -> ccli::IterationDecision {
-		std::cout << "... " << idx << " - " << var.getLongName() << " " << var.getValueString() << std::endl;
+		std::cout << "... " << idx << " - " << var.longName() << " " << var.valueString() << std::endl;
 		return {};
 	});
 

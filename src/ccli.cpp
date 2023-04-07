@@ -241,7 +241,7 @@ void ccli::loadConfig(const std::string& cfgFile)
 			// also check rd
 			if (var && var->isConfigRead())
 			{
-				var->setValueString(value);
+				var->valueString(value);
 				if (var->isConfigReadWrite()) configMap.insert({ token, value });
 			}
 			else configMap.insert({ token, value });
@@ -261,7 +261,7 @@ void ccli::writeConfig(const std::string& cfgFile)
 		if (snd->isConfigReadWrite())
 		{
 			// also check if rdwr
-			write |= doesConfigVarNeedUpdate(configMap, fst, snd->getValueString());
+			write |= doesConfigVarNeedUpdate(configMap, fst, snd->valueString());
 		}
 	}
 	if (!write) return;
@@ -322,17 +322,17 @@ ccli::VarBase::~VarBase()
 	if (_hasCallback) removeFromCallbackSet(this);
 }
 
-const std::string& ccli::VarBase::getLongName() const noexcept
+const std::string& ccli::VarBase::longName() const noexcept
 {
 	return _longName;
 }
 
-const std::string& ccli::VarBase::getShortName() const noexcept
+const std::string& ccli::VarBase::shortName() const noexcept
 {
 	return _shortName;
 }
 
-const std::string& ccli::VarBase::getDescription() const noexcept
+const std::string& ccli::VarBase::description() const noexcept
 {
 	return _description;
 }
@@ -372,9 +372,9 @@ bool ccli::VarBase::locked() const noexcept
 	return _locked;
 }
 
-void ccli::VarBase::locked(const bool aLocked)
+void ccli::VarBase::locked(const bool locked)
 {
-	_locked = aLocked;
+	_locked = locked;
 }
 
 template <typename T>
