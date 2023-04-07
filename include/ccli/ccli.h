@@ -294,11 +294,10 @@ public:
 			std::stringstream stream;
 			for (size_t i = 0; i != _value.size(); i++)
 			{
-				if (i)
-				{
-					stream << _delimiter;
-				}
-				stream << _value.at(i);
+				if (i) stream << _delimiter;
+				if constexpr (std::is_same_v<TData, std::string>) stream << _value.at(i);
+				else if constexpr (std::is_same_v<TData, bool>) stream << std::boolalpha << _value.at(i);
+				else stream << std::to_string(_value.at(i));
 			}
 			return stream.str();
 		}
