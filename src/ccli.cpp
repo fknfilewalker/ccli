@@ -203,9 +203,12 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 		{
 			// arg without value (cleared otherwise)
 			if (var && var->isBool() && var->size() == 1) var->setValueStringInternal("");
+		
+			std::string_view argView{ arg };
+
 			// find new arg
-			if (longName) var = findVarByLongName(arg.substr(2));
-			else if (shortName) var = findVarByShortName(arg.substr(1));
+			if (longName) var = findVarByLongName(argView.substr(2));
+			else if (shortName) var = findVarByShortName(argView.substr(1));
 			// error if not found
 			if (var == nullptr) {
 				throw ccli::UnknownVarNameError{ std::move(arg) };
