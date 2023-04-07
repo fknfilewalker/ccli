@@ -124,31 +124,32 @@ public:
 	struct Storage
 	{
 		static_assert(S >= 1, "Size must be larger 0");
-		std::array<TData, S> mData;
+		std::array<TData, S> data;
 
-		static constexpr size_t size() { return S; }
-		auto& at(size_t idx) { return mData.at(idx); }
-		const auto& at(size_t idx) const { return mData.at(idx); }
-		auto begin() { return mData.begin(); }
-		auto end() { return mData.end(); }
-		const std::array<TData, S>& asArray() const { return mData; }
+		static constexpr size_t size() noexcept { return S; }
+		auto& at(size_t idx) { return data.at(idx); }
+		const auto& at(size_t idx) const { return data.at(idx); }
+		auto begin() { return data.begin(); }
+		auto end() { return data.end(); }
+		const std::array<TData, S>& asArray() const noexcept { return data; }
 	};
 
 	template <typename TData>
 	struct Storage<TData, 1>
 	{
+		TData data;
+
 		Storage() = default;
 		template <typename U, typename = std::enable_if_t<std::is_same_v<TData, std::string>>>
-		Storage(const U& d) : mData{ d } {}
-		Storage(const TData& d) : mData{ d } {}
-		TData mData;
+		Storage(const U& d) noexcept : data{ d } {}
+		Storage(const TData& d) noexcept : data{ d } {}
 
-		static constexpr size_t size() { return 1; }
-		auto& at(size_t) { return mData; }
-		const auto& at(size_t) const { return mData; }
-		auto* begin() { return &mData; }
-		auto* end() { return &mData + 1; }
-		std::array<TData, 1> asArray() const { return { mData }; }
+		static constexpr size_t size() noexcept { return 1; }
+		auto& at(size_t) { return data; }
+		const auto& at(size_t) const { return data; }
+		auto* begin() { return &data; }
+		auto* end() { return &data + 1; }
+		std::array<TData, 1> asArray() const noexcept { return { data }; }
 	};
 
 	template <auto Value>
@@ -210,7 +211,7 @@ public:
 		Var& operator=(const Var&) = delete;
 		Var& operator=(Var&&) = delete;
 
-		const auto& value() const noexcept { return _value.mData; }
+		const auto& value() const noexcept { return _value.data; }
 		void value(const TStorage& aValue)
 		{
 			if (isCliOnly()) return;

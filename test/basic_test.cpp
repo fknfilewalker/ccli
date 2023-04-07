@@ -82,7 +82,7 @@ void test3() {
 
 	const char* argv[] = { "-lambda", "222"};
 	ccli::parseArgs(std::size(argv), argv);
-	assert(std::abs(222.0f - value) <= std::numeric_limits<float>::epsilon());
+	assert(std::abs(222.0f - value) < std::numeric_limits<float>::epsilon());
 }
 
 void test4() {
