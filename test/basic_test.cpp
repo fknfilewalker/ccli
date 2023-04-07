@@ -1,6 +1,6 @@
 #include <ccli/ccli.h>
 #include <iostream>
-
+#include <cassert>
 
 //ccli::Var<float, 2, ccli::CONFIG_RDWR> var_test("test", "t", "Just a test", { 100,100 });
 //ccli::Var<float, 2, ccli::CONFIG_RDWR> var_test2("test", "", "Hallo", { 100,100 });
@@ -20,71 +20,54 @@
 
 void test1()
 {
-	std::cout << "<Test 1 type=\"bool test\">" << std::endl;
-	// args
 	ccli::Var<bool> bool_var1("b1", "bool1", 0, ccli::NONE, "First bool Var");
 	ccli::Var<bool> bool_var2("b2", "bool2", false, ccli::NONE, "Second bool Var");
 	ccli::Var<bool> bool_var3("b3", "bool3", 1, ccli::NONE, "Third bool Var");
 	ccli::Var<bool> bool_var4("b4", "bool4", true, ccli::NONE, "Fourth bool Var");
 
-	std::cout << "\t<args> no args (defaults) </args>" << std::endl;
-	std::cout << "\tbool_var1 is " << bool_var1.getValue() << " should be " << false << std::endl;
-	std::cout << "\tbool_var2 is " << bool_var2.getValue() << " should be " << false << std::endl;
-	std::cout << "\tbool_var3 is " << bool_var3.getValue() << " should be " << true << std::endl;
-	std::cout << "\tbool_var4 is " << bool_var4.getValue() << " should be " << true << std::endl;
-	for (const std::string& s : ccli::checkErrors()) std::cout << "\t\t" << s << std::endl;
-	std::cout << std::endl;
+	assert(bool_var1.getValue() == false);
+	assert(bool_var2.getValue() == false);
+	assert(bool_var3.getValue() == true);
+	assert(bool_var4.getValue() == true);
+	for (const std::string& s : ccli::checkErrors()) std::cout << "\t\t" << s << std::endl << std::endl;
 
 	const char* argv[] = { "-b1", "1", "-b2", "true", "-b3", "0", "-b4", "false" };
-	ccli::parseArgs(8, argv);
-	std::cout << "\t<args> -b1 1 -b2 true -b3 0 -b4 false </args>" << std::endl;
-	std::cout << "\tbool_var1 is " << bool_var1.getValue() << " should be " << true << std::endl;
-	std::cout << "\tbool_var2 is " << bool_var2.getValue() << " should be " << true << std::endl;
-	std::cout << "\tbool_var3 is " << bool_var3.getValue() << " should be " << false << std::endl;
-	std::cout << "\tbool_var4 is " << bool_var4.getValue() << " should be " << false << std::endl;
-	for (const std::string& s : ccli::checkErrors()) std::cout << "\t\t" << s << std::endl;
-	std::cout << std::endl;
+	ccli::parseArgs(std::size(argv), argv);
+	assert(bool_var1.getValue() == true);
+	assert(bool_var2.getValue() == true);
+	assert(bool_var3.getValue() == false);
+	assert(bool_var4.getValue() == false);
+	for (const std::string& s : ccli::checkErrors()) std::cout << "\t\t" << s << std::endl << std::endl;
 
 	const char* argv2[] = { "-b1", "0", "-b2", "-b3", "--bool4" };
-	ccli::parseArgs(5, argv2);
-	std::cout << "\t<args> -b1 0 -b2 -b3 --bool4 </args>" << std::endl;
-	std::cout << "\tbool_var1 is " << bool_var1.getValue() << " should be " << false << std::endl;
-	std::cout << "\tbool_var2 is " << bool_var2.getValue() << " should be " << true << std::endl;
-	std::cout << "\tbool_var3 is " << bool_var3.getValue() << " should be " << true << std::endl;
-	std::cout << "\tbool_var4 is " << bool_var4.getValue() << " should be " << true << std::endl;
+	ccli::parseArgs(std::size(argv2), argv2);
+	assert(bool_var1.getValue() == false);
+	assert(bool_var2.getValue() == true);
+	assert(bool_var3.getValue() == true);
+	assert(bool_var4.getValue() == true);
 	for (const std::string& s : ccli::checkErrors()) std::cout << "\t\t" << s << std::endl;
-
-	std::cout << "</Test 1>" << std::endl;
 }
 
 void test2()
 {
-	std::cout << "<Test 2 type=\"\">" << std::endl;
+	ccli::Var<uint32_t, 3> uvec3_var("uvec3", "", {1, 2, 3});
+	ccli::Var<std::string, 2> string_var("string", "", { "This is a test", "really"});
 
-	/*const char* argv[] = { "--bool1", "-b2", "-f2", "200,200" };
-	ccli::parseArgs(4, argv);
-	std::cout << "\t--- --bool1 -b2 -f2 200,200 ---" << std::endl;
-	std::cout << "\tbool_var1 is " << bool_var1.getValue()[0] << " should be " << true << std::endl;
-	std::cout << "\tbool_var2 is " << bool_var2.getValue()[0] << " should be " << true << std::endl;
-	std::cout << "\tfvec3_var1 is " << fvec2_var1.getValue()[0] << " " << fvec2_var1.getValue()[1] << " should be " << 200 << " " << 200 << std::endl;
+	assert(uvec3_var.getValue().at(0) == 1 && uvec3_var.getValue().at(1) == 2 && uvec3_var.getValue().at(2) == 3);
+	assert(string_var.getValue().at(0) == "This is a test" && string_var.getValue().at(1) == "really");
 	for (const std::string& s : ccli::checkErrors()) std::cout << "\t\t" << s << std::endl;
-	std::cout << std::endl;
 
-	const char* argv2[] = { "--bool1", "-b2", "f" };
-	ccli::parseArgs(4, argv);
-	std::cout << "\t--- --bool1 -b2 -f2 200,200 ---" << std::endl;
-	std::cout << "\tbool_var1 is " << bool_var1.getValue()[0] << " should be " << true << std::endl;
-	std::cout << "\tbool_var2 is " << bool_var2.getValue()[0] << " should be " << true << std::endl;
-	std::cout << "\tfvec3_var1 is " << fvec2_var1.getValue()[0] << " " << fvec2_var1.getValue()[1] << " should be " << 200 << " " << 200 << std::endl;
+	const char* argv[] = { "-uvec3", "5,6,7", "-string", "This is not a test,or is it"};
+	ccli::parseArgs(std::size(argv), argv);
+	assert(uvec3_var.getValue().at(0) == 5 && uvec3_var.getValue().at(1) == 6 && uvec3_var.getValue().at(2) == 7);
+	assert(string_var.getValue().at(0) == "This is not a test" && string_var.getValue().at(1) == "or is it");
 	for (const std::string& s : ccli::checkErrors()) std::cout << "\t\t" << s << std::endl;
-	std::cout << std::endl;*/
 
-	std::cout << "</Test 2>" << std::endl;
 }
 
 int main(int argc, char* argv[]) {
 	test1();
-
+	test2();
 
 	ccli::Var<float, 4, ccli::MaxLimit<1.0>, ccli::MinLimit<-1>> float_var1("f1", "float1", {0}, ccli::NONE, "First bool Var");
 	ccli::Var<float, 4> float_var2("f2", "float2", {0}, ccli::NONE, "First bool Var");
