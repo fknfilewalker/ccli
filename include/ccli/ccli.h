@@ -356,7 +356,7 @@ public:
 		TStorage _value;
 	};
 
-	class CCLIError : std::exception {
+	class CCLIError : public std::exception {
 	public:
 		CCLIError(std::string m);
 		const char* what() const final { return message().data(); }
@@ -368,28 +368,28 @@ public:
 		std::string _arg;
 	};
 
-	class DuplicatedVarNameError final : CCLIError {
+	class DuplicatedVarNameError final : public CCLIError {
 	public:
 		DuplicatedVarNameError(std::string name);
 		std::string_view message() const override;
 		std::string_view duplicatedName() const { return _arg; }
 	};
 
-	class FileError final : CCLIError {
+	class FileError final : public CCLIError {
 	public:
 		FileError(std::string path);
 		std::string_view message() const override;
 		std::string_view filePath() const { return _arg; }
 	};
 
-	class UnknownVarNameError final : CCLIError {
+	class UnknownVarNameError final : public CCLIError {
 	public:
 		UnknownVarNameError(std::string name);
 		std::string_view message() const override;
 		std::string_view unknownName() const { return _arg; }
 	};
 
-	class ConversionError final : CCLIError {
+	class ConversionError final : public CCLIError {
 	public:
 		ConversionError(const VarBase&, std::string name);
 		std::string_view message() const override;
