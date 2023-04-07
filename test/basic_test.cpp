@@ -156,12 +156,12 @@ void test4() {
 	{
 		bool didCatch = false;
 		try {
-			ccli::Var<float, 1> floatVar1("float", "", 0.0);
-			ccli::Var<float, 1> floatVar2("float", "", 0.0);
+			ccli::Var<float, 1> floatVar1("f1", "float", 0.0);
+			ccli::Var<float, 1> floatVar2("f2", "float", 0.0);
 		}
 		catch (const ccli::DuplicatedVarNameError& e) {
 			didCatch = true;
-			assert(e.duplicatedName() == "-float"sv);
+			assert(e.duplicatedName() == "float"sv);
 			assert(e.what() && strlen(e.what()));
 			assert(e.message().size());
 		}
