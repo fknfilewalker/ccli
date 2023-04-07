@@ -120,8 +120,8 @@ public:
 		bool _locked;
 	};
 
-	template <typename TData, size_t S>
-	struct VariableSizedData
+	template <typename TData, size_t S = 1>
+	struct Storage
 	{
 		static_assert(S >= 1, "Size must be larger 0");
 		std::array<TData, S> mData;
@@ -135,12 +135,12 @@ public:
 	};
 
 	template <typename TData>
-	struct VariableSizedData<TData, 1>
+	struct Storage<TData, 1>
 	{
-		VariableSizedData() = default;
+		Storage() = default;
 		template <typename U, typename = std::enable_if_t<std::is_same_v<TData, std::string>>>
-		VariableSizedData(const U& d) : mData{ d } {}
-		VariableSizedData(const TData& d) : mData{ d } {}
+		Storage(const U& d) : mData{ d } {}
+		Storage(const TData& d) : mData{ d } {}
 		TData mData;
 
 		static constexpr size_t size() { return 1; }
@@ -175,7 +175,7 @@ public:
 		template <typename... TRest>
 		struct LimitApplier
 		{
-			static auto apply(VariableSizedData<TData, S> x)
+			static auto apply(Storage<TData, S> x)
 			{
 				return x;
 			}
@@ -184,7 +184,7 @@ public:
 		template <typename TLimit, typename... TRest>
 		struct LimitApplier<TLimit, TRest...>
 		{
-			static auto apply(VariableSizedData<TData, S> x)
+			static auto apply(Storage<TData, S> x)
 			{
 				for(uint32_t i = 0; i < x.size(); i++) x.at(i) = TLimit::apply(x.at(i));
 				return LimitApplier<TRest...>::apply(x);
@@ -192,7 +192,7 @@ public:
 		};
 
 	public:
-		using TStorage = VariableSizedData<TData, S>;
+		using TStorage = Storage<TData, S>;
 		static_assert(std::disjunction_v<std::is_integral<TData>, std::is_floating_point<TData>, std::is_same<TData, std::string>>
 			, "Type must be integral, floating-point or string");
 		static_assert((!std::is_same_v<TData, std::string> && !std::is_same_v<TData, bool>) || sizeof...(TLimits) == 0,
@@ -200,7 +200,7 @@ public:
 
 		Var(const std::string_view shortName, const std::string_view longName, const TStorage& value = {},
 		    const uint32_t flags = NONE, const std::string_view description = {},
-		    const std::function<void(const std::array<TData, S>&)> callback = {})
+		    const std::function<void(const Storage<TData, S>&)> callback = {})
 			: VarBase(shortName, longName, flags, description, callback != nullptr),
 				_callback{ callback }, _callbackCharged{ false }, _value{ LimitApplier<TLimits...>::apply(value) } {}
 
@@ -222,7 +222,7 @@ public:
 		{
 			if (hasCallback() && _callbackCharged)
 			{
-				_callback(_value.asArray());
+				_callback(_value);
 				_callbackCharged = false;
 				return true;
 			}
@@ -350,7 +350,7 @@ public:
 		}
 
 		static constexpr const char* _delimiter = ",";
-		const std::function<void(const std::array<TData, S>&)> _callback;
+		const std::function<void(const Storage<TData, S>&)> _callback;
 		bool _callbackCharged;
 		TStorage _value;
 	};
