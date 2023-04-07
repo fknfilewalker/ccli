@@ -46,7 +46,7 @@ public:
 	};
 
 	class VarBase;
-	static void parseArgs(int argc, const char* const argv[]);
+	static void parseArgs(size_t argc, const char* const argv[]);
 	static void loadConfig(const std::string& cfgFile);
 	static void writeConfig(const std::string& cfgFile);
 	static void executeCallbacks();
@@ -122,28 +122,13 @@ public:
 		bool _locked;
 	};
 
-	template <auto Value>
-	struct MaxLimit
-	{
-		template <typename T>
-		static T apply(T x) { return x > static_cast<T>(Value) ? static_cast<T>(Value) : x; }
-	};
-
-	template <auto Value>
-	struct MinLimit
-	{
-		template <typename T>
-		static T apply(T x) { return x < static_cast<T>(Value) ? static_cast<T>(Value) : x; }
-	};
-
-
 	template <typename TData, size_t S>
 	struct VariableSizedData
 	{
 		static_assert(S >= 1, "Size must be larger 0");
 		std::array<TData, S> mData;
 
-		static constexpr auto size() { return S; }
+		static constexpr size_t size() { return S; }
 		auto& at(size_t idx) { return mData.at(idx); }
 		const auto& at(size_t idx) const { return mData.at(idx); }
 		auto begin() { return mData.begin(); }
@@ -160,12 +145,26 @@ public:
 		VariableSizedData(const TData& d) : mData{ d } {}
 		TData mData;
 
-		static constexpr auto size() { return 1; }
+		static constexpr size_t size() { return 1; }
 		auto& at(size_t) { return mData; }
 		const auto& at(size_t) const { return mData; }
 		auto* begin() { return &mData; }
 		auto* end() { return &mData + 1; }
 		std::array<TData, 1> asArray() const { return { mData }; }
+	};
+
+	template <auto Value>
+	struct MaxLimit
+	{
+		template <typename T>
+		static T apply(T x) { return x > static_cast<T>(Value) ? static_cast<T>(Value) : x; }
+	};
+
+	template <auto Value>
+	struct MinLimit
+	{
+		template <typename T>
+		static T apply(T x) { return x < static_cast<T>(Value) ? static_cast<T>(Value) : x; }
 	};
 
 	template <
@@ -175,6 +174,25 @@ public:
 	>
 	class Var final : public VarBase
 	{
+		template <typename... TRest>
+		struct LimitApplier
+		{
+			static auto apply(VariableSizedData<TData, S> x)
+			{
+				return x;
+			}
+		};
+
+		template <typename TLimit, typename... TRest>
+		struct LimitApplier<TLimit, TRest...>
+		{
+			static auto apply(VariableSizedData<TData, S> x)
+			{
+				for(uint32_t i = 0; i < x.size(); i++) x.at(i) = TLimit::apply(x.at(i));
+				return LimitApplier<TRest...>::apply(x);
+			}
+		};
+
 	public:
 		using TStorage = VariableSizedData<TData, S>;
 		static_assert(std::disjunction_v<std::is_integral<TData>, std::is_floating_point<TData>, std::is_same<TData, std::string>>
@@ -186,7 +204,7 @@ public:
 		    const uint32_t flags = NONE, const std::string_view description = {},
 		    const std::function<void(const std::array<TData, S>&)> callback = {})
 			: VarBase(shortName, longName, flags, description, callback != nullptr),
-				_callback{ callback }, _callbackCharged{ false }, _value{ value } {}
+				_callback{ callback }, _callbackCharged{ false }, _value{ LimitApplier<TLimits...>::apply(value) } {}
 
 		~Var() override = default;
 		Var(const Var&) = delete;
@@ -288,24 +306,6 @@ public:
 		}
 
 	private:
-		template <typename... TRest>
-		struct LimitApplier
-		{
-			static auto apply(TData x)
-			{
-				return x;
-			}
-		};
-
-		template <typename TLimit, typename... TRest>
-		struct LimitApplier<TLimit, TRest...>
-		{
-			static auto apply(TData x)
-			{
-				return LimitApplier<TRest...>::apply(TLimit::apply(x));
-			}
-		};
-
 		void setValueInternal(const TStorage& value)
 		{
 			if (_locked || isReadOnly()) return;
@@ -345,10 +345,7 @@ public:
 
 			if constexpr (!std::is_same_v<TData, std::string>)
 			{
-				for (uint32_t i = 0; i < size(); i++)
-				{
-					_value.at(i) = LimitApplier<TLimits...>::apply(_value.at(i));
-				}
+				_value = LimitApplier<TLimits...>::apply(_value);
 			}
 
 			_callbackCharged = true;
