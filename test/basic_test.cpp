@@ -26,10 +26,10 @@ void test1()
 	ccli::Var<bool> boolVar4("b4", "bool4", true, ccli::NONE, "Fourth bool Var");
 
 	try {
-		assert(boolVar1.getValue() == false);
-		assert(boolVar2.getValue() == false);
-		assert(boolVar3.getValue() == true);
-		assert(boolVar4.getValue() == true);
+		assert(boolVar1.value() == false);
+		assert(boolVar2.value() == false);
+		assert(boolVar3.value() == true);
+		assert(boolVar4.value() == true);
 	}
 	catch (ccli::CCLIError& e) {
 		std::cout << "Caught error: " << e.message() << std::endl;
@@ -38,10 +38,10 @@ void test1()
 	try{
 		const char* argv[] = { "-b1", "1", "-b2", "true", "-b3", "0", "-b4", "false" };
 		ccli::parseArgs(std::size(argv), argv);
-		assert(boolVar1.getValue() == true);
-		assert(boolVar2.getValue() == true);
-		assert(boolVar3.getValue() == false);
-		assert(boolVar4.getValue() == false);
+		assert(boolVar1.value() == true);
+		assert(boolVar2.value() == true);
+		assert(boolVar3.value() == false);
+		assert(boolVar4.value() == false);
 	}
 	catch (ccli::CCLIError& e) {
 		std::cout << "Caught error: " << e.message() << std::endl;
@@ -50,10 +50,10 @@ void test1()
 	try {
 		const char* argv2[] = { "-b1", "0", "-b2", "-b3", "--bool4" };
 		ccli::parseArgs(std::size(argv2), argv2);
-		assert(boolVar1.getValue() == false);
-		assert(boolVar2.getValue() == true);
-		assert(boolVar3.getValue() == true);
-		assert(boolVar4.getValue() == true);
+		assert(boolVar1.value() == false);
+		assert(boolVar2.value() == true);
+		assert(boolVar3.value() == true);
+		assert(boolVar4.value() == true);
 	}
 	catch (ccli::CCLIError& e) {
 		std::cout << "Caught error: " << e.message() << std::endl;
@@ -67,9 +67,9 @@ void test2()
 	ccli::Var<uint8_t, 2, ccli::MaxLimit<2>> limitVar("limit", "", { 3, 4 });
 
 	try {
-		assert(uvec3Var.getValue().at(0) == 1 && uvec3Var.getValue().at(1) == 2 && uvec3Var.getValue().at(2) == 3);
-		assert(stringVar.getValue().at(0) == "This is a test" && stringVar.getValue().at(1) == "really");
-		assert(limitVar.getValue().at(0) == 2 && limitVar.getValue().at(1) == 2);
+		assert(uvec3Var.value().at(0) == 1 && uvec3Var.value().at(1) == 2 && uvec3Var.value().at(2) == 3);
+		assert(stringVar.value().at(0) == "This is a test" && stringVar.value().at(1) == "really");
+		assert(limitVar.value().at(0) == 2 && limitVar.value().at(1) == 2);
 	}
 	catch (ccli::CCLIError& e) {
 		std::cout << "Caught error: " << e.message() << std::endl;
@@ -78,9 +78,9 @@ void test2()
 	try {
 		const char* argv[] = { "-uvec3", "5,6,7", "-string", "This is not a test,or is it", "-limit", "100,200"};
 		ccli::parseArgs(std::size(argv), argv);
-		assert(uvec3Var.getValue().at(0) == 5 && uvec3Var.getValue().at(1) == 6 && uvec3Var.getValue().at(2) == 7);
-		assert(stringVar.getValue().at(0) == "This is not a test" && stringVar.getValue().at(1) == "or is it");
-		assert(limitVar.getValue().at(0) == 2 && limitVar.getValue().at(1) == 2);
+		assert(uvec3Var.value().at(0) == 5 && uvec3Var.value().at(1) == 6 && uvec3Var.value().at(2) == 7);
+		assert(stringVar.value().at(0) == "This is not a test" && stringVar.value().at(1) == "or is it");
+		assert(limitVar.value().at(0) == 2 && limitVar.value().at(1) == 2);
 	}
 	catch (ccli::CCLIError& e) {
 		std::cout << "Caught error: " << e.message() << std::endl;
@@ -110,11 +110,11 @@ int main(int argc, char* argv[]) {
 	try {
 		ccli::parseArgs(argc, argv);
 		ccli::loadConfig("test.cfg");
-		var_test.setValue({ 200, 200 });
+		var_test.value({ 200, 200 });
 		ccli::writeConfig("test.cfg");
-		std::cout << float_var1.getValue()[0] << std::endl;
-		std::cout << float_var1.getValue()[1] << std::endl;
-		std::cout << var_test.getValue()[0] << std::endl;
+		std::cout << float_var1.value()[0] << std::endl;
+		std::cout << float_var1.value()[1] << std::endl;
+		std::cout << var_test.value()[0] << std::endl;
 	}
 	catch (ccli::CCLIError& e) {
 		std::cout << "Caught error: " << e.message() << std::endl;

@@ -211,8 +211,8 @@ public:
 		Var& operator=(const Var&) = delete;
 		Var& operator=(Var&&) = delete;
 
-		const auto& getValue() { return _value.mData; }
-		void setValue(const TStorage& aValue)
+		const auto& value() { return _value.mData; }
+		void value(const TStorage& aValue)
 		{
 			if (isCliOnly()) return;
 			setValueInternal(aValue);
