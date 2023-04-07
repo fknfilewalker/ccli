@@ -54,11 +54,12 @@ public:
 	enum Flag
 	{
 		NONE		= (0 << 0),
-		CLI_ONLY	= (1 << 0),	// can only be set through parseArgs
-		READ_ONLY	= (1 << 1),	// display only, cannot be changed at all
-		CONFIG_RD	= (1 << 2),	// load variable from config file
-		CONFIG_RDWR = (3 << 2),	// load variable from config file and save changes back to config file
-		MANUAL_EXEC = (1 << 4)	// execute callback only when executeCallback/executeCallbacks is called
+		READ_ONLY	= (1 << 0),	// display only, cannot be modified at all
+		CLI_ONLY	= (1 << 1),	// can only be set through parseArgs
+		LOCKED		= (1 << 2),	// this var is locked, cannot be modified until unlocked
+		CONFIG_RD	= (1 << 3),	// load variable from config file
+		CONFIG_RDWR = (3 << 3),	// load variable from config file and save changes back to config file
+		MANUAL_EXEC = (1 << 5)	// execute callback only when executeCallback/executeCallbacks is called
 	};
 
 	class VarBase
@@ -87,6 +88,7 @@ public:
 
 		[[nodiscard]] bool isCliOnly() const noexcept;
 		[[nodiscard]] bool isReadOnly() const noexcept;
+		[[nodiscard]] bool isLocked() const noexcept;
 		[[nodiscard]] bool isConfigRead() const noexcept;
 		[[nodiscard]] bool isConfigReadWrite() const noexcept;
 		[[nodiscard]] bool isCallbackAutoExecuted() const noexcept;
@@ -101,7 +103,6 @@ public:
 		[[nodiscard]] virtual std::optional<double> asFloat(size_t = 0) const = 0;
 		[[nodiscard]] virtual std::optional<std::string_view> asString(size_t = 0) const = 0;
 
-		[[nodiscard]] bool locked() const noexcept;
 		void locked(bool locked);
 
 	protected:
@@ -115,9 +116,8 @@ public:
 		const std::string _shortName;
 		const std::string _longName;
 		const std::string _description;
-		const uint32_t _flags;
+		uint32_t _flags;
 		const bool _hasCallback;
-		bool _locked;
 	};
 
 	template <typename TData, size_t S = 1>
@@ -212,11 +212,31 @@ public:
 		Var& operator=(const Var&) = delete;
 		Var& operator=(Var&&) = delete;
 
-		const auto& value() const noexcept { return _value.data; }
+		operator const TStorage& () const { return _value; }
+
 		void value(const TStorage& aValue)
 		{
-			if (isCliOnly()) return;
+			if (isReadOnly() || isCliOnly() || isLocked()) return;
 			setValueInternal(aValue);
+		}
+		const auto& value() const noexcept { return _value.data; }
+
+		void valueString(const std::string_view string) override
+		{
+			if (isReadOnly() || isCliOnly() || isLocked()) return;
+			setValueStringInternal(string);
+		}
+		std::string valueString() override
+		{
+			std::stringstream stream;
+			for (size_t i = 0; i != _value.size(); i++)
+			{
+				if (i) stream << _delimiter;
+				if constexpr (std::is_same_v<TData, std::string>) stream << _value.at(i);
+				else if constexpr (std::is_same_v<TData, bool>) stream << std::boolalpha << _value.at(i);
+				else stream << std::to_string(_value.at(i));
+			}
+			return stream.str();
 		}
 
 		void chargeCallback() noexcept { _callbackCharged = true; }
@@ -285,29 +305,10 @@ public:
 			return {};
 		}
 
-		void valueString(const std::string_view string) override
-		{
-			if (isCliOnly()) return;
-			setValueStringInternal(string);
-		}
-
-		std::string valueString() override
-		{
-			std::stringstream stream;
-			for (size_t i = 0; i != _value.size(); i++)
-			{
-				if (i) stream << _delimiter;
-				if constexpr (std::is_same_v<TData, std::string>) stream << _value.at(i);
-				else if constexpr (std::is_same_v<TData, bool>) stream << std::boolalpha << _value.at(i);
-				else stream << std::to_string(_value.at(i));
-			}
-			return stream.str();
-		}
-
 	private:
 		void setValueInternal(const TStorage& value)
 		{
-			if (_locked || isReadOnly()) return;
+			if (isReadOnly() || isLocked()) return;
 			_value = value;
 			if (hasCallback())
 			{
@@ -318,7 +319,7 @@ public:
 
 		void setValueStringInternal(std::string_view string) override
 		{
-			if (_locked || isReadOnly()) return;
+			if (isReadOnly() || isLocked()) return;
 			// empty string only allowed for bool and string
 			if constexpr (!std::is_same_v<TData, bool> && !std::is_same_v<TData, std::string>) if (string.empty())
 				return;
