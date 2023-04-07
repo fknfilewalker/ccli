@@ -140,8 +140,9 @@ public:
 		TData data;
 
 		Storage() = default;
-		template <typename U, typename = std::enable_if_t<std::is_same_v<TData, std::string>>>
-		Storage(const U& d) noexcept : data{ d } {}
+		template <typename U>
+		requires(std::is_same_v<TData, std::string>)
+		Storage(const U& d) noexcept : data{d} {}
 		Storage(const TData& d) noexcept : data{ d } {}
 
 		static constexpr size_t size() noexcept { return 1; }
