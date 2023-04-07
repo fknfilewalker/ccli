@@ -244,16 +244,16 @@ void ccli::loadConfig(const std::string& cfgFile)
 		const size_t pos = line.find(configDelimiter);
 		if (pos != std::string::npos)
 		{
-			std::string token = line.substr(0, pos);
-			std::string value = line.substr(pos + 1, line.size());
+			auto token = line.substr(0, pos);
+			auto value = line.substr(pos + 1, line.size());
 			VarBase* var = findVarByLongName(token);
 			// also check rd
 			if (var && var->isConfigRead())
 			{
 				var->valueString(value);
-				if (var->isConfigReadWrite()) configMap.insert({ token, value });
+				if (var->isConfigReadWrite()) configMap.insert({ std::move(token), std::move(value) });
 			}
-			else configMap.insert({ token, value });
+			else configMap.insert({ std::move(token), std::move(value) });
 		}
 	}
 	f.close();
