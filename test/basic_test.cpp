@@ -79,10 +79,24 @@ void test3() {
 		}
 	);
 	assert(value == 0.0f);
+	float value2 = 0.0f;
+	ccli::Var<float> lambdaVar2("lambdaLazy", "", { 100.0f }, ccli::Flag::MANUAL_EXEC, "",
+		[&](const ccli::Storage<float>& v) {
+			value2 = v.at(0);
+		}
+	);
 
-	const char* argv[] = { "-lambda", "222"};
+	const char* argv[] = { "-lambda", "222", "-lambdaLazy", "222" };
 	ccli::parseArgs(std::size(argv), argv);
 	assert(std::abs(222.0f - value) < std::numeric_limits<float>::epsilon());
+
+	assert(value2 == 0.0f);
+	ccli::executeCallbacks();
+	assert(std::abs(222.0f - value2) < std::numeric_limits<float>::epsilon());
+
+	value2 = 0.0f;
+	ccli::executeCallbacks();
+	assert(value2 == 0.0f);
 }
 
 void test4() {
