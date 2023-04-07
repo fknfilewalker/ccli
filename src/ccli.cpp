@@ -37,6 +37,7 @@ namespace
 	using namespace std::literals;
 
 	constexpr char configDelimiter = '=';
+	using MapType = std::map<std::string, ccli::VarBase*, std::less<>>;
 
 	/*
 	** vars
@@ -44,13 +45,13 @@ namespace
 	// contains static lists keeping track of all vars
 	std::map<std::string, ccli::VarBase*, std::less<>>& getLongNameVarMap()
 	{
-		static std::map<std::string, ccli::VarBase*, std::less<>> map;
+		static MapType map;
 		return map;
 	}
 
 	std::map<std::string, ccli::VarBase*, std::less<>>& getShortNameVarMap()
 	{
-		static std::map<std::string, ccli::VarBase*, std::less<>> map;
+		static MapType map;
 		return map;
 	}
 
@@ -75,20 +76,25 @@ namespace
 		std::map<std::string, ccli::VarBase*, std::less<>>& mapLong = getLongNameVarMap();
 		std::map<std::string, ccli::VarBase*, std::less<>>& mapShort = getShortNameVarMap();
 
-		std::optional<std::string> duplicatedName;
+		std::optional<std::pair<MapType::iterator, bool>> pairShort;
+		std::optional<std::pair<MapType::iterator, bool>> pairLong;
 		if (!shortName.empty())
 		{
-			const bool inserted = mapShort.insert(std::pair<std::string, ccli::VarBase*>(shortName, aVar)).second;
-			if (!inserted) duplicatedName = "-" + shortName;
-		}
-		if (!longName.empty())
-		{
-			const bool inserted = mapLong.insert(std::pair<std::string, ccli::VarBase*>(longName, aVar)).second;
-			if (!inserted) duplicatedName = "--" + longName;
+			pairShort= mapShort.insert(std::pair<std::string, ccli::VarBase*>(shortName, aVar));
 		}
 
-		if (duplicatedName.has_value()) {
-			throw ccli::DuplicatedVarNameError{ std::move(*duplicatedName) };
+		if ((!pairShort.has_value() || pairShort->second) && !longName.empty())
+		{
+			pairLong = mapLong.insert(std::pair<std::string, ccli::VarBase*>(longName, aVar));
+		}
+
+		if ((pairShort.has_value() && !pairShort->second) || (pairLong.has_value() && !pairLong->second)) {
+			if (pairShort.has_value() && pairShort->second) {
+				mapShort.erase(pairShort->first);
+			}
+
+			assert(!(pairLong.has_value() && pairLong->second));
+			throw ccli::DuplicatedVarNameError{ (pairShort.has_value() && !pairShort->second) ? shortName : longName };
 		}
 	}
 
