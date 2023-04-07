@@ -432,19 +432,30 @@ bool ccli::VarBase::parseBool(const std::string_view token)
 }
 
 template<typename T, typename ... Rest>
-void streamAppend(std::stringstream& stream, const T& val, const Rest& ... rest) {
-	stream << val;
+void builderAppend(std::string& buffer, const T& val, const Rest& ... rest) {
+	buffer+= val;
 
 	if constexpr (sizeof...(Rest) > 0) {
-		streamAppend(stream, rest...);
+		builderAppend(buffer, rest...);
 	}
+}
+
+template<typename T, typename ... Rest>
+size_t countAppendedLength(const T& val, const Rest& ... rest)
+{
+	if constexpr (sizeof...(Rest) > 0) {
+		return val.size() + countAppendedLength(rest...);
+	}
+
+	return val.size();
 }
 
 template<typename ... T>
 std::string buildString(const T& ... vals) {
-	std::stringstream stream;
-	streamAppend(stream, vals...);
-	return stream.str();
+	std::string buffer;
+	buffer.reserve(countAppendedLength(vals...));
+	builderAppend(buffer, vals...);
+	return buffer;
 }
 
 ccli::CCLIError::CCLIError(std::string m)
