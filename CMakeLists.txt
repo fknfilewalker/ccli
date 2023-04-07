@@ -15,8 +15,11 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 endif()
 
 cmake_minimum_required(VERSION 3.14.0)
-# SET
-set(APP_NAME example)
+
+# VARS
+set(EXTERNAL_DIR "external")
+set(TEST_DIR "test")
+option(BUILD_TESTS "Build Tests" ON)
 
 # COMPILER
 # set(CMAKE_GENERATOR_TOOLSET "ClangCL")
@@ -33,13 +36,29 @@ endif()
 
 # PROJECT
 project(ccli)
-# .h
-file(GLOB HEADERS "*.h" "*.hpp")
-# .c/.cpp
-file(GLOB SOURCES "*.cpp")
+set(CCLI ccli)
 
-# exe
-add_executable(${APP_NAME} WIN32 ${SOURCES} ${HEADERS})
-set_target_properties(${APP_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")   
-set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${APP_NAME}) 
+# SOURCES
+file(GLOB SOURCES "src/ccli.cpp")
+file(GLOB HEADERS "include/ccli/ccli.h")
+
+# GROUPING
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" PREFIX "Source Files" FILES ${SOURCES})
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/include" PREFIX "Header Files" FILES ${HEADERS})
+
+# TARGET
+add_library(${CCLI} STATIC ${SOURCES} ${HEADERS})
+add_library(${CCLI}::${CCLI} ALIAS ${CCLI})
+target_include_directories(${CCLI} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+
+if(BUILD_TESTS)
+	# exe
+	set(TEST_NAME "basic_test")
+	add_executable(${TEST_NAME} WIN32 "test/basic_test.cpp")
+	set_target_properties(${TEST_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")   
+	set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${TEST_NAME}) 
+
+	target_link_libraries(${TEST_NAME} PRIVATE ccli::ccli)
+	add_dependencies(${TEST_NAME} ccli::ccli)
+endif()
 
