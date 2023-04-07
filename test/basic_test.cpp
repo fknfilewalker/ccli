@@ -2,22 +2,6 @@
 #include <iostream>
 #include <cassert>
 
-//ccli::Var<float, 2, ccli::CONFIG_RDWR> var_test("test", "t", "Just a test", { 100,100 });
-//ccli::Var<float, 2, ccli::CONFIG_RDWR> var_test2("test", "", "Hallo", { 100,100 });
-//
-//void print(const std::array<float, 2> aValue)
-//{
-//	std::cout << "Callback test: " << aValue[0] << " " << aValue[1] << std::endl;
-//}
-//ccli::Var<float, 2> var_cbtest("cbtest", "cbt", "Just a test", { 100,100 }, print);
-//
-//ccli::Var<float, 2> var_cbtestlambda("cbtestlambda", "cbtl", "Just a test", { 100,100 }, [](const std::array<float, 2> aValue) {
-//	std::cout << "Callback test: " << aValue[0] << " " << aValue[1] << std::endl;
-//	});
-//
-//ccli::Var<bool> var_nix("", "nix", "Just a test", { });
-//ccli::Var<bool> var_nix2("", "nix2", "Just a test", { });
-
 void test1()
 {
 	ccli::Var<bool> boolVar1("b1", "bool1", 0, ccli::NONE, "First bool Var");
@@ -76,7 +60,7 @@ void test2()
 	}
 
 	try {
-		const char* argv[] = { "-uvec3", "5,6,7", "-string", "This is not a test,or is it", "-limit", "100,200"};
+		const char* argv[] = { "-uvec3", "5,6,7", "-string", "This is not a test,or is it", "-limit", "100,200" };
 		ccli::parseArgs(std::size(argv), argv);
 		assert(uvec3Var.value().at(0) == 5 && uvec3Var.value().at(1) == 6 && uvec3Var.value().at(2) == 7);
 		assert(stringVar.value().at(0) == "This is not a test" && stringVar.value().at(1) == "or is it");
@@ -88,6 +72,20 @@ void test2()
 }
 
 void test3() {
+	float value = 0.0f;
+	ccli::Var<float> lambdaVar("lambda", "", { 100.0f }, 0, "",
+		[&](const ccli::Storage<float>& v) {
+			value = v.at(0);
+		}
+	);
+	assert(value == 0.0f);
+
+	const char* argv[] = { "-lambda", "222"};
+	ccli::parseArgs(std::size(argv), argv);
+	assert(std::abs(222.0f - value) <= std::numeric_limits<float>::epsilon());
+}
+
+void test4() {
 	try {
 		throw ccli::FileError{ "a/file/name" };
 	}
@@ -100,6 +98,7 @@ int main(int argc, char* argv[]) {
 	test1();
 	test2();
 	test3();
+	test4();
 
 	ccli::Var<float, 4, ccli::MaxLimit<1.0>, ccli::MinLimit<-1>> float_var1("f1", "float1", {0}, ccli::NONE, "First bool Var");
 	ccli::Var<float, 4> float_var2("f2", "float2", {0}, ccli::NONE, "First bool Var");
