@@ -172,10 +172,10 @@ namespace
 	}
 }
 
-void ccli::parseArgs(const int argc, const char* const argv[])
+void ccli::parseArgs(const size_t argc, const char* const argv[])
 {
 	std::deque<std::string> args;
-	for (int i = 0; i < argc; i++)
+	for (size_t i = 0; i < argc; i++)
 	{
 		args.emplace_back(argv[i]);
 	}
