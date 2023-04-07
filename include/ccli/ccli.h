@@ -50,7 +50,6 @@ public:
 	static void loadConfig(const std::string& cfgFile);
 	static void writeConfig(const std::string& cfgFile);
 	static void executeCallbacks();
-	static std::deque<std::string> checkErrors();
 	static IterationDecision forEachVar(const std::function<IterationDecision(VarBase&, size_t)>&);
 
 	enum Flag
@@ -109,8 +108,8 @@ public:
 	protected:
 		virtual void setValueStringInternal(std::string_view aString) = 0;
 
-		static long long parseIntegral(std::string_view);
-		static double parseDouble(std::string_view);
+		static long long parseIntegral(const VarBase&, std::string_view);
+		static double parseDouble(const VarBase&, std::string_view);
 		static bool parseBool(std::string_view);
 
 		friend class ccli;
@@ -335,9 +334,9 @@ public:
 
 				if (count > _value.size() - 1) break;
 
-				if constexpr (std::is_floating_point_v<TData>) _value.at(count) = static_cast<TData>(parseDouble(token));
+				if constexpr (std::is_floating_point_v<TData>) _value.at(count) = static_cast<TData>(parseDouble(*this, token));
 				else if constexpr (std::is_same_v<TData, bool>) _value.at(count) = parseBool(token);
-				else if constexpr (std::is_integral_v<TData>) _value.at(count) = static_cast<TData>(parseIntegral(token));
+				else if constexpr (std::is_integral_v<TData>) _value.at(count) = static_cast<TData>(parseIntegral(*this, token));
 				else if constexpr (std::is_same_v<TData, std::string>) _value.at(count) = token;
 				count++;
 			}
@@ -356,5 +355,47 @@ public:
 		const std::function<void(const std::array<TData, S>&)> _callback;
 		bool _callbackCharged;
 		TStorage _value;
+	};
+
+	class CCLIError : std::exception {
+	public:
+		CCLIError(std::string m);
+		virtual const char* what() const final { return message().data(); }
+		virtual std::string_view message() const { return _message; }
+	protected:
+		struct ArgType {};
+		CCLIError(ArgType, std::string a);
+		mutable std::string _message;
+		std::string _arg;
+	};
+
+	class DuplicatedVarNameError final : CCLIError {
+	public:
+		DuplicatedVarNameError(std::string name);
+		virtual std::string_view message() const override;
+		const std::string_view duplicatedName() const { return _arg; }
+	};
+
+	class FileError final : CCLIError {
+	public:
+		FileError(std::string path);
+		virtual std::string_view message() const override;
+		const std::string_view filePath() const { return _arg; }
+	};
+
+	class UnknownVarNameError final : CCLIError {
+	public:
+		UnknownVarNameError(std::string name);
+		virtual std::string_view message() const override;
+		const std::string_view unknownName() const { return _arg; }
+	};
+
+	class ConversionError final : CCLIError {
+	public:
+		ConversionError(const VarBase&, std::string name);
+		virtual std::string_view message() const override;
+		const std::string_view unconvertibleValueString() const { return _arg; }
+	private:
+		const VarBase& _variable;
 	};
 };

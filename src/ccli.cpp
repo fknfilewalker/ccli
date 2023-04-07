@@ -30,18 +30,13 @@ SOFTWARE.
 #include <fstream>
 #include <filesystem>
 #include <charconv>
+#include <string_view>
 
 namespace
 {
+	using namespace std::literals;
+
 	constexpr char configDelimiter = '=';
-	/*
-	** errors
-	*/
-	std::deque<std::string>& getErrorDeque()
-	{
-		static std::deque<std::string> deque;
-		return deque;
-	}
 
 	/*
 	** vars
@@ -79,20 +74,26 @@ namespace
 	{
 		std::map<std::string, ccli::VarBase*, std::less<>>& mapLong = getLongNameVarMap();
 		std::map<std::string, ccli::VarBase*, std::less<>>& mapShort = getShortNameVarMap();
-		if (!longName.empty())
-		{
-			const bool inserted = mapLong.insert(std::pair<std::string, ccli::VarBase*>(longName, aVar)).second;
-			if (!inserted) getErrorDeque().emplace_back("Long identifier '--" + longName + "' already exists");
-		}
+
+		std::optional<std::string> duplicatedName;
 		if (!shortName.empty())
 		{
 			const bool inserted = mapShort.insert(std::pair<std::string, ccli::VarBase*>(shortName, aVar)).second;
-			if (!inserted) getErrorDeque().emplace_back("Short identifier '-" + shortName + "' already exists");
+			if (!inserted) duplicatedName = "-" + shortName;
+		}
+		if (!longName.empty())
+		{
+			const bool inserted = mapLong.insert(std::pair<std::string, ccli::VarBase*>(longName, aVar)).second;
+			if (!inserted) duplicatedName = "--" + longName;
+		}
+
+		if (duplicatedName.has_value()) {
+			throw ccli::DuplicatedVarNameError{ std::move(*duplicatedName) };
 		}
 	}
 
 	void removeFromVarList(const std::string_view longName, const std::string_view shortName,
-	                       const ccli::VarBase* const aVar)
+		const ccli::VarBase* const aVar)
 	{
 		std::map<std::string, ccli::VarBase*, std::less<>>& mapLong = getLongNameVarMap();
 		std::map<std::string, ccli::VarBase*, std::less<>>& mapShort = getShortNameVarMap();
@@ -142,7 +143,7 @@ namespace
 	}
 
 	bool doesConfigVarNeedUpdate(std::map<std::string, std::string>& aMap, const std::string& aToken,
-	                             const std::string& aValue)
+		const std::string& aValue)
 	{
 		const auto it = aMap.find(aToken);
 		if (it != aMap.end() && it->second != aValue)
@@ -152,23 +153,21 @@ namespace
 		}
 		if (it == aMap.end())
 		{
-			aMap.insert({aToken, aValue});
+			aMap.insert({ aToken, aValue });
 			return true;
 		}
 		return false;
 	}
 
-	bool writeConfigFile(std::string const& aFilename, const std::string_view aContent)
+	void writeConfigFile(std::string const& aFilename, const std::string_view aContent)
 	{
 		std::ofstream file(aFilename, std::ios::out | std::ios::binary);
 		if (!file.is_open())
 		{
-			getErrorDeque().emplace_back("Could not open file '" + aFilename + "' for writing");
-			return false;
+			throw ccli::FileError{ aFilename };
 		}
 		file.write(aContent.data(), static_cast<std::streamsize>(aContent.size()));
 		file.close();
-		return true;
 	}
 }
 
@@ -191,7 +190,7 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 	VarBase* var = nullptr;
 	while (!args.empty())
 	{
-		const auto& arg = args.front();
+		auto arg = std::move(args.front());
 		const bool shortName = arg.size() >= 2 ? arg[0] == '-' && isalpha(arg[1]) : false;
 		const bool longName = arg.size() >= 2 ? arg[0] == '-' && arg[1] == '-' : false;
 		if (shortName || longName)
@@ -202,7 +201,9 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 			if (longName) var = findVarByLongName(arg.substr(2));
 			else if (shortName) var = findVarByShortName(arg.substr(1));
 			// error if not found
-			if (var == nullptr) getErrorDeque().emplace_back("'" + arg + "' not found");
+			if (var == nullptr) {
+				throw ccli::UnknownVarNameError{ std::move(arg) };
+			}
 		}
 		// Var found
 		else if (var)
@@ -241,9 +242,9 @@ void ccli::loadConfig(const std::string& cfgFile)
 			if (var && var->isConfigRead())
 			{
 				var->setValueString(value);
-				if (var->isConfigReadWrite()) configMap.insert({token, value});
+				if (var->isConfigReadWrite()) configMap.insert({ token, value });
 			}
-			else configMap.insert({token, value});
+			else configMap.insert({ token, value });
 		}
 	}
 	f.close();
@@ -281,14 +282,6 @@ void ccli::executeCallbacks()
 	{
 		var->executeCallback();
 	}
-}
-
-std::deque<std::string> ccli::checkErrors()
-{
-	std::deque<std::string>& deque = getErrorDeque();
-	std::deque<std::string> out = deque;
-	deque.clear();
-	return out;
 }
 
 ccli::IterationDecision ccli::forEachVar(const std::function<IterationDecision(VarBase&, size_t)>& callback)
@@ -385,26 +378,26 @@ void ccli::VarBase::locked(const bool aLocked)
 }
 
 template <typename T>
-T parseUsingFromChars(std::string_view token)
+T parseUsingFromChars(const ccli::VarBase& var, std::string_view token)
 {
 	T value;
 	auto result = std::from_chars(token.data(), token.data() + token.size(), value);
 	if (result.ec == std::errc::invalid_argument)
 	{
-		getErrorDeque().emplace_back("'" + std::string{ token } + "' not convertible");
+		throw ccli::ConversionError{ var, std::string{ token } };
 	}
 
 	return value;
 }
 
-long long ccli::VarBase::parseIntegral(const std::string_view token)
+long long ccli::VarBase::parseIntegral(const ccli::VarBase& var, const std::string_view token)
 {
-	return parseUsingFromChars<long long>(token);
+	return parseUsingFromChars<long long>(var, token);
 }
 
-double ccli::VarBase::parseDouble(const std::string_view token)
+double ccli::VarBase::parseDouble(const ccli::VarBase& var, const std::string_view token)
 {
-	return parseUsingFromChars<double>(token);
+	return parseUsingFromChars<double>(var, token);
 }
 
 bool ccli::VarBase::parseBool(const std::string_view token)
@@ -415,14 +408,84 @@ bool ccli::VarBase::parseBool(const std::string_view token)
 	}
 
 	bool value;
-	const std::string copiedToken{token};
+	const std::string copiedToken{ token };
 
-	std::istringstream{copiedToken} >> std::boolalpha >> value;
+	std::istringstream{ copiedToken } >> std::boolalpha >> value;
 	if (value)
 	{
 		return true;
 	}
 
-	std::istringstream{copiedToken} >> value;
+	std::istringstream{ copiedToken } >> value;
 	return value;
+}
+
+template<typename T, typename ... Rest>
+void streamAppend(std::stringstream& stream, const T& val, const Rest& ... rest) {
+	stream << val;
+
+	if constexpr (sizeof...(Rest) > 0) {
+		streamAppend(stream, rest...);
+	}
+}
+
+template<typename ... T>
+std::string buildString(const T& ... vals) {
+	std::stringstream stream;
+	streamAppend(stream, vals...);
+	return stream.str();
+}
+
+ccli::CCLIError::CCLIError(std::string m)
+	: _message{ std::move(m) } {}
+
+ccli::CCLIError::CCLIError(ccli::CCLIError::ArgType, std::string a)
+	: _arg{ std::move(a) } {}
+
+ccli::DuplicatedVarNameError::DuplicatedVarNameError(std::string name)
+	: CCLIError{ {}, std::move(name) } {}
+
+std::string_view ccli::DuplicatedVarNameError::message() const
+{
+	if (_message.empty()) {
+		_message = buildString("Variable with the identifier '"sv, _arg, "' already exists. Cannot create another one."sv);
+	}
+
+	return _message;
+}
+
+ccli::FileError::FileError(std::string path)
+	: CCLIError{ {}, std::move(path) } {}
+
+std::string_view ccli::FileError::message() const
+{
+	if (_message.empty()) {
+		_message = buildString("Could not open file '"sv, _arg, "' for writing. Could not save varibles to disk."sv);
+	}
+
+	return _message;
+}
+
+ccli::UnknownVarNameError::UnknownVarNameError(std::string name)
+	: CCLIError{ {}, std::move(name) } {}
+
+std::string_view ccli::UnknownVarNameError::message() const
+{
+	if (_message.empty()) {
+		_message = buildString("Unknown variable name '"sv, _arg, "' while parsing arguments."sv);
+	}
+
+	return _message;
+}
+
+ccli::ConversionError::ConversionError(const VarBase& var, std::string name)
+	: CCLIError{ {}, std::move(name) }, _variable{ var } {}
+
+std::string_view ccli::ConversionError::message() const
+{
+	if (_message.empty()) {
+		_message = buildString("Could not convert '"sv, _arg, "' to variable."sv);
+	}
+
+	return _message;
 }
