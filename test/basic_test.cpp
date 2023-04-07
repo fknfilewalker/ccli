@@ -64,7 +64,7 @@ void test2()
 {
 	ccli::Var<uint32_t, 3> uvec3Var("uvec3", "", { 1, 2, 3 });
 	ccli::Var<std::string, 2> stringVar("string", "", { "This is a test", "really" });
-	ccli::Var<int8_t, 2, ccli::MaxLimit<2>> limitVar("limit", "", { 3, 4 });
+	ccli::Var<uint8_t, 2, ccli::MaxLimit<2>> limitVar("limit", "", { 3, 4 });
 
 	try {
 		assert(uvec3Var.getValue().at(0) == 1 && uvec3Var.getValue().at(1) == 2 && uvec3Var.getValue().at(2) == 3);
@@ -76,7 +76,7 @@ void test2()
 	}
 
 	try {
-		const char* argv[] = { "-uvec3", "5,6,7", "-string", "This is not a test,or is it"};
+		const char* argv[] = { "-uvec3", "5,6,7", "-string", "This is not a test,or is it", "-limit", "100,200"};
 		ccli::parseArgs(std::size(argv), argv);
 		assert(uvec3Var.getValue().at(0) == 5 && uvec3Var.getValue().at(1) == 6 && uvec3Var.getValue().at(2) == 7);
 		assert(stringVar.getValue().at(0) == "This is not a test" && stringVar.getValue().at(1) == "or is it");
