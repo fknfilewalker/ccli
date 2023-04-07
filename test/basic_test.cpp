@@ -1,6 +1,9 @@
 #include <ccli/ccli.h>
 #include <iostream>
 #include <cassert>
+#include <string_view>
+
+using namespace std::literals;
 
 void test1()
 {
@@ -107,7 +110,66 @@ void test4() {
 		throw ccli::FileError{ "a/file/name" };
 	}
 	catch (const std::exception& e) {
-		std::cout << "Caught error: " << e.what() << std::endl;
+		assert(e.what() && strlen(e.what()));
+	}
+
+	{
+		bool didCatch = false;
+		ccli::Var<float, 1> floatVar("float", "", 0.0);
+		try {
+			const char* argv[] = { "-float", "badValue" };
+			ccli::parseArgs(std::size(argv), argv);
+		}
+		catch (const ccli::ConversionError& e) {
+			didCatch = true;
+			assert(e.unconvertibleValueString() == "badValue"sv);
+			assert(&e.variable() == &floatVar);
+			assert(e.what() && strlen(e.what()));
+			assert(e.message().size());
+		}
+		catch (...) {
+			assert(false);
+		}
+
+		assert(didCatch);
+	}
+
+	{
+		bool didCatch = false;
+		try {
+			const char* argv[] = { "-aBadVariableNameWhichDoesNotExist", "someValue" };
+			ccli::parseArgs(std::size(argv), argv);
+		}
+		catch (const ccli::UnknownVarNameError& e) {
+			didCatch = true;
+			assert(e.unknownName() == "-aBadVariableNameWhichDoesNotExist"sv);
+			assert(e.what() && strlen(e.what()));
+			assert(e.message().size());
+		}
+		catch (...) {
+			assert(false);
+		}
+
+		assert(didCatch);
+	}
+
+	{
+		bool didCatch = false;
+		try {
+			ccli::Var<float, 1> floatVar1("float", "", 0.0);
+			ccli::Var<float, 1> floatVar2("float", "", 0.0);
+		}
+		catch (const ccli::DuplicatedVarNameError& e) {
+			didCatch = true;
+			assert(e.duplicatedName() == "-float"sv);
+			assert(e.what() && strlen(e.what()));
+			assert(e.message().size());
+		}
+		catch (...) {
+			assert(false);
+		}
+
+		assert(didCatch);
 	}
 }
 

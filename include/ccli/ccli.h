@@ -394,6 +394,7 @@ public:
 		ConversionError(const VarBase&, std::string name);
 		std::string_view message() const override;
 		std::string_view unconvertibleValueString() const { return _arg; }
+		const VarBase& variable() const { return _variable; }
 	private:
 		const VarBase& _variable;
 	};
