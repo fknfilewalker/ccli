@@ -275,14 +275,15 @@ void ccli::writeConfig(const std::string& cfgFile)
 	}
 	if (!write) return;
 	// create output string
-	std::string out;
+	std::stringstream outStream;
 	for (const auto& [fst, snd] : configMap)
 	{
-		out += fst + configDelimiter;
-		out += "\"" + snd + "\"\n";
+		outStream << fst << configDelimiter;
+		outStream << '\"' << snd << "\"\n";
 	}
 	// write config
-	if (!out.empty()) writeConfigFile(cfgFile, out);
+	auto outString = outStream.str();
+	if (!outString.empty()) writeConfigFile(cfgFile, outString);
 }
 
 void ccli::executeCallbacks()
