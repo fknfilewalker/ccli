@@ -28,7 +28,6 @@ SOFTWARE.
 #include <array>
 #include <functional>
 #include <sstream>
-#include <deque>
 #include <optional>
 
 class ccli
@@ -74,23 +73,23 @@ public:
 		VarBase& operator=(const VarBase&) = delete;
 		VarBase& operator=(VarBase&&) = delete;
 
-		[[nodiscard]] const std::string& getLongName() const;
-		[[nodiscard]] const std::string& getShortName() const;
-		[[nodiscard]] const std::string& getDescription() const;
+		[[nodiscard]] const std::string& getLongName() const noexcept;
+		[[nodiscard]] const std::string& getShortName() const noexcept;
+		[[nodiscard]] const std::string& getDescription() const noexcept;
 
 		virtual std::string getValueString() = 0;
 		virtual void setValueString(std::string_view aString) = 0;
 
-		[[nodiscard]] bool hasCallback() const;
+		[[nodiscard]] bool hasCallback() const noexcept;
 		virtual bool executeCallback() = 0;
 
-		[[nodiscard]] virtual size_t size() const = 0;
+		[[nodiscard]] virtual size_t size() const noexcept = 0;
 
-		[[nodiscard]] bool isCliOnly() const;
-		[[nodiscard]] bool isReadOnly() const;
-		[[nodiscard]] bool isConfigRead() const;
-		[[nodiscard]] bool isConfigReadWrite() const;
-		[[nodiscard]] bool isCallbackAutoExecuted() const;
+		[[nodiscard]] bool isCliOnly() const noexcept;
+		[[nodiscard]] bool isReadOnly() const noexcept;
+		[[nodiscard]] bool isConfigRead() const noexcept;
+		[[nodiscard]] bool isConfigReadWrite() const noexcept;
+		[[nodiscard]] bool isCallbackAutoExecuted() const noexcept;
 
 		[[nodiscard]] virtual bool isBool() const = 0;
 		[[nodiscard]] virtual bool isIntegral() const = 0;
@@ -102,7 +101,7 @@ public:
 		[[nodiscard]] virtual std::optional<double> asFloat(size_t = 0) const = 0;
 		[[nodiscard]] virtual std::optional<std::string_view> asString(size_t = 0) const = 0;
 
-		[[nodiscard]] bool locked() const;
+		[[nodiscard]] bool locked() const noexcept;
 		void locked(bool aLocked);
 
 	protected:
@@ -156,14 +155,14 @@ public:
 	struct MaxLimit
 	{
 		template <typename T>
-		static T apply(T x) { return x > static_cast<T>(Value) ? static_cast<T>(Value) : x; }
+		static T apply(T x) noexcept { return x > static_cast<T>(Value) ? static_cast<T>(Value) : x; }
 	};
 
 	template <auto Value>
 	struct MinLimit
 	{
 		template <typename T>
-		static T apply(T x) { return x < static_cast<T>(Value) ? static_cast<T>(Value) : x; }
+		static T apply(T x) noexcept { return x < static_cast<T>(Value) ? static_cast<T>(Value) : x; }
 	};
 
 	template <
@@ -211,14 +210,14 @@ public:
 		Var& operator=(const Var&) = delete;
 		Var& operator=(Var&&) = delete;
 
-		const auto& value() { return _value.mData; }
+		const auto& value() const noexcept { return _value.mData; }
 		void value(const TStorage& aValue)
 		{
 			if (isCliOnly()) return;
 			setValueInternal(aValue);
 		}
 
-		void chargeCallback() { _callbackCharged = true; }
+		void chargeCallback() noexcept { _callbackCharged = true; }
 		bool executeCallback() override
 		{
 			if (hasCallback() && _callbackCharged)
@@ -230,7 +229,7 @@ public:
 			return false;
 		}
 
-		[[nodiscard]] size_t size() const override { return _value.size(); }
+		[[nodiscard]] size_t size() const noexcept override { return _value.size(); }
 		[[nodiscard]] bool isCallbackCharged() const { return _callbackCharged; }
 
 		[[nodiscard]] bool isBool() const override { return std::is_same_v<TData, bool>; }
@@ -360,7 +359,7 @@ public:
 	class CCLIError : std::exception {
 	public:
 		CCLIError(std::string m);
-		virtual const char* what() const final { return message().data(); }
+		const char* what() const final { return message().data(); }
 		virtual std::string_view message() const { return _message; }
 	protected:
 		struct ArgType {};
@@ -372,29 +371,29 @@ public:
 	class DuplicatedVarNameError final : CCLIError {
 	public:
 		DuplicatedVarNameError(std::string name);
-		virtual std::string_view message() const override;
-		const std::string_view duplicatedName() const { return _arg; }
+		std::string_view message() const override;
+		std::string_view duplicatedName() const { return _arg; }
 	};
 
 	class FileError final : CCLIError {
 	public:
 		FileError(std::string path);
-		virtual std::string_view message() const override;
-		const std::string_view filePath() const { return _arg; }
+		std::string_view message() const override;
+		std::string_view filePath() const { return _arg; }
 	};
 
 	class UnknownVarNameError final : CCLIError {
 	public:
 		UnknownVarNameError(std::string name);
-		virtual std::string_view message() const override;
-		const std::string_view unknownName() const { return _arg; }
+		std::string_view message() const override;
+		std::string_view unknownName() const { return _arg; }
 	};
 
 	class ConversionError final : CCLIError {
 	public:
 		ConversionError(const VarBase&, std::string name);
-		virtual std::string_view message() const override;
-		const std::string_view unconvertibleValueString() const { return _arg; }
+		std::string_view message() const override;
+		std::string_view unconvertibleValueString() const { return _arg; }
 	private:
 		const VarBase& _variable;
 	};

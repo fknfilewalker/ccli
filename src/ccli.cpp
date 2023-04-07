@@ -30,7 +30,7 @@ SOFTWARE.
 #include <fstream>
 #include <filesystem>
 #include <charconv>
-#include <string_view>
+#include <deque>
 
 namespace
 {
@@ -322,52 +322,52 @@ ccli::VarBase::~VarBase()
 	if (_hasCallback) removeFromCallbackSet(this);
 }
 
-const std::string& ccli::VarBase::getLongName() const
+const std::string& ccli::VarBase::getLongName() const noexcept
 {
 	return _longName;
 }
 
-const std::string& ccli::VarBase::getShortName() const
+const std::string& ccli::VarBase::getShortName() const noexcept
 {
 	return _shortName;
 }
 
-const std::string& ccli::VarBase::getDescription() const
+const std::string& ccli::VarBase::getDescription() const noexcept
 {
 	return _description;
 }
 
-bool ccli::VarBase::hasCallback() const
+bool ccli::VarBase::hasCallback() const noexcept
 {
 	return _hasCallback;
 }
 
-bool ccli::VarBase::isCliOnly() const
+bool ccli::VarBase::isCliOnly() const noexcept
 {
 	return _flags & CLI_ONLY;
 }
 
-bool ccli::VarBase::isReadOnly() const
+bool ccli::VarBase::isReadOnly() const noexcept
 {
 	return _flags & READ_ONLY;
 }
 
-bool ccli::VarBase::isConfigRead() const
+bool ccli::VarBase::isConfigRead() const noexcept
 {
 	return !_longName.empty() && _flags & CONFIG_RD;
 }
 
-bool ccli::VarBase::isConfigReadWrite() const
+bool ccli::VarBase::isConfigReadWrite() const noexcept
 {
 	return !_longName.empty() && _flags & CONFIG_RDWR;
 }
 
-bool ccli::VarBase::isCallbackAutoExecuted() const
+bool ccli::VarBase::isCallbackAutoExecuted() const noexcept
 {
 	return !(_flags & MANUAL_EXEC);
 }
 
-bool ccli::VarBase::locked() const
+bool ccli::VarBase::locked() const noexcept
 {
 	return _locked;
 }
