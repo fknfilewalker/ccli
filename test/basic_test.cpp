@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cassert>
 #include <string_view>
+#include <array>
 
 using namespace std::literals;
 
@@ -200,51 +201,63 @@ void exceptionTest() {
 	}
 }
 
-int main(int argc, char* argv[]) {
-	basicBoolTest();
-	immutableTest();
-	arrayTest();
-	lambdaCallbackTest();
-	exceptionTest();
+void configTest()
+{
+	ccli::Var<uint32_t, 2> uint2Var(""sv, "float2"sv, { 100, 200 }, ccli::CONFIG_RDWR);
+	ccli::Var<std::string> stringVar(""sv, "string"sv, { "This is a string" }, ccli::CONFIG_RDWR);
 
-	ccli::Var<float, 4, ccli::MaxLimit<1>, ccli::MinLimit<-1>> float_var1("f1", "float1", {0}, ccli::NONE, "First bool Var");
-	ccli::Var<float, 4> float_var2("f2", "float2", {0}, ccli::NONE, "First bool Var");
-	ccli::Var<float, 2> var_test("t", "test", { 100, 200 }, ccli::CONFIG_RDWR);
-	ccli::Var<short, 1, ccli::MaxLimit<500>> short_var("s", "short", 0);
-	ccli::Var<bool> bool_var("b", "bool1", false);
-
+	static constexpr auto filename = "configTest.cfg";
 	try {
-		ccli::parseArgs(argc, argv);
-		ccli::loadConfig("test.cfg");
-		var_test.value({ 200, 200 });
-		ccli::writeConfig("test.cfg");
-		std::cout << float_var1.value()[0] << std::endl;
-		std::cout << float_var1.value()[1] << std::endl;
-		std::cout << var_test.value()[0] << std::endl;
+		ccli::writeConfig(filename);
+		uint2Var.value({ 1, 1 });
+		stringVar.value("empty");
+		ccli::loadConfig(filename);
 	}
 	catch (ccli::CCLIError& e) {
 		std::cout << "Caught error: " << e.message() << std::endl;
 	}
+	if (remove(filename) != 0)
+	{
+		std::cout << "Error deleting file" << std::endl;
+	}
 
-	std::cout << "Sizeof float_var1: " << sizeof(float_var1) << std::endl;
-	std::cout << "Sizeof float_var2: " << sizeof(float_var2) << std::endl;
+	constexpr std::array<uint32_t, 2> result = { 100, 200 };
+	assert(uint2Var.value() == result);
+	assert(stringVar.value() == "This is a string");
+}
 
-	std::cout << "repr: " << float_var1.valueString() << std::endl;
+void registeredVarTest()
+{
+	ccli::Var<float, 4, ccli::MaxLimit<1>, ccli::MinLimit<-1>> float_var1("f1", "float1", { 0 }, ccli::NONE, "First bool Var");
+	ccli::Var<float, 4> float_var2("f2", "float2", { 0 }, ccli::NONE, "First bool Var");
+	ccli::Var<float, 2> var_test("t", "test", { 100, 200 }, ccli::CONFIG_RDWR);
+	ccli::Var<short, 1, ccli::MaxLimit<500>> short_var("s", "short", 0);
+	ccli::Var<bool> bool_var("b", "bool1", false);
 
 	ccli::Var<std::string> string_var("str1", "string1", "A cool value");
 	ccli::Var<std::string> string_var2(std::string{ "str2" }, "string2", "Another cool value");
 
 	std::cout << "Currently registerd variables..." << std::endl;
-	ccli::forEachVar([](ccli::VarBase& var, size_t idx) -> ccli::IterationDecision {
+	ccli::forEachVar([](ccli::VarBase& var, const size_t idx) -> ccli::IterationDecision {
 		std::cout << "... " << idx << " - " << var.longName() << " " << var.valueString() << std::endl;
 		return {};
-	});
+		});
 
 	std::cout << *var_test.asBool() << std::endl;
 	std::cout << *var_test.asInt() << std::endl;
 	std::cout << *var_test.asFloat() << std::endl;
 	std::cout << var_test.asString().has_value() << std::endl;
 	std::cout << *string_var.asString() << std::endl;
+}
+
+int main(int argc, char* argv[]) {
+	basicBoolTest();
+	immutableTest();
+	arrayTest();
+	lambdaCallbackTest();
+	exceptionTest();
+	configTest();
+	registeredVarTest();
 
 	return 0;
 }
