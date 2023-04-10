@@ -103,7 +103,9 @@ public:
 		[[nodiscard]] virtual std::optional<double> asFloat(size_t = 0) const = 0;
 		[[nodiscard]] virtual std::optional<std::string_view> asString(size_t = 0) const = 0;
 
-		void locked(bool locked);
+		void lock() noexcept;
+		void unlock() noexcept;
+		void locked(bool locked) noexcept;
 
 	protected:
 		virtual void setValueStringInternal(std::string_view string) = 0;

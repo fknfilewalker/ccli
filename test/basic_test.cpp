@@ -5,92 +5,119 @@
 
 using namespace std::literals;
 
-void test1()
+void basicBoolTest()
 {
-	ccli::Var<bool> boolVar1("b1", "bool1", 0, ccli::NONE, "First bool Var");
-	ccli::Var<bool> boolVar2("b2", "bool2", false, ccli::NONE, "Second bool Var");
-	ccli::Var<bool> boolVar3("b3", "bool3", 1, ccli::NONE, "Third bool Var");
-	ccli::Var<bool> boolVar4("b4", "bool4", true, ccli::NONE, "Fourth bool Var");
+	ccli::Var<bool> boolVar1("b1"sv, "bool1"sv, 0, ccli::NONE, "First bool Var"sv);
+	ccli::Var<bool> boolVar2("b2"sv, "bool2"sv, false, ccli::NONE, "Second bool Var"sv);
+	ccli::Var<bool> boolVar3("b3"sv, "bool3"sv, 1, ccli::NONE, "Third bool Var"sv);
+	ccli::Var<bool> boolVar4("b4"sv, "bool4"sv, true, ccli::NONE, "Fourth bool Var"sv);
+
+	assert(boolVar1.value() == false);
+	assert(boolVar2.value() == false);
+	assert(boolVar3.value() == true);
+	assert(boolVar4.value() == true);
 
 	try {
-		assert(boolVar1.value() == false);
-		assert(boolVar2.value() == false);
-		assert(boolVar3.value() == true);
-		assert(boolVar4.value() == true);
-	}
-	catch (ccli::CCLIError& e) {
-		std::cout << "Caught error: " << e.message() << std::endl;
-	}
-
-	try{
 		const char* argv[] = { "-b1", "1", "-b2", "true", "-b3", "0", "-b4", "false" };
 		ccli::parseArgs(std::size(argv), argv);
-		assert(boolVar1.value() == true);
-		assert(boolVar2.value() == true);
-		assert(boolVar3.value() == false);
-		assert(boolVar4.value() == false);
 	}
 	catch (ccli::CCLIError& e) {
 		std::cout << "Caught error: " << e.message() << std::endl;
 	}
+	assert(boolVar1.value() == true);
+	assert(boolVar2.value() == true);
+	assert(boolVar3.value() == false);
+	assert(boolVar4.value() == false);
 
 	try {
-		const char* argv2[] = { "-b1", "0", "-b2", "-b3", "--bool4" };
-		ccli::parseArgs(std::size(argv2), argv2);
-		assert(boolVar1.value() == false);
-		assert(boolVar2.value() == true);
-		assert(boolVar3.value() == true);
-		assert(boolVar4.value() == true);
+		const char* argv[] = { "-b1", "0", "-b2", "-b3", "--bool4" };
+		ccli::parseArgs(std::size(argv), argv);
 	}
 	catch (ccli::CCLIError& e) {
 		std::cout << "Caught error: " << e.message() << std::endl;
 	}
+	assert(boolVar1.value() == false);
+	assert(boolVar2.value() == true);
+	assert(boolVar3.value() == true);
+	assert(boolVar4.value() == true);
 }
 
-void test2()
+void immutableTest()
 {
-	ccli::Var<uint32_t, 3> uvec3Var("uvec3", "", { 1, 2, 3 });
-	ccli::Var<std::string, 2> stringVar("string", "", { "This is a test", "really" });
-	ccli::Var<uint8_t, 2, ccli::MaxLimit<2>> limitVar("limit", "", { 3, 4 });
+	ccli::Var<uint32_t> readOnlyVar(""sv, "readOnly"sv, 111, ccli::READ_ONLY);
+	ccli::Var<uint32_t> cliOnlyVar(""sv, "cliOnly"sv, 222, ccli::CLI_ONLY);
+	ccli::Var<uint32_t> lockedVar(""sv, "locked"sv, 333, ccli::LOCKED);
+	assert(readOnlyVar.value() == 111);
+	assert(cliOnlyVar.value() == 222);
+	assert(lockedVar.value() == 333);
 
 	try {
-		assert(uvec3Var.value().at(0) == 1 && uvec3Var.value().at(1) == 2 && uvec3Var.value().at(2) == 3);
-		assert(stringVar.value().at(0) == "This is a test" && stringVar.value().at(1) == "really");
-		assert(limitVar.value().at(0) == 2 && limitVar.value().at(1) == 2);
+		const char* argv[] = { "--readOnly", "1", "--cliOnly", "2", "--locked", "3"};
+		ccli::parseArgs(std::size(argv), argv);
 	}
 	catch (ccli::CCLIError& e) {
 		std::cout << "Caught error: " << e.message() << std::endl;
 	}
+	assert(readOnlyVar.value() == 111);
+	assert(cliOnlyVar.value() == 2);
+	assert(lockedVar.value() == 333);
+
+	readOnlyVar.value(1111);
+	cliOnlyVar.value(2222);
+	lockedVar.value(3333);
+	assert(readOnlyVar.value() == 111);
+	assert(cliOnlyVar.value() == 2);
+	assert(lockedVar.value() == 333);
+
+	lockedVar.unlock();
+	lockedVar.value(3333);
+	assert(lockedVar.value() == 3333);
+}
+
+void arrayTest()
+{
+	ccli::Var<uint32_t, 3> uvec3Var("uvec3"sv, ""sv, { 1, 2, 3 });
+	ccli::Var<std::string, 2> stringVar("string"sv, ""sv, { "This is a test", "really" });
+	ccli::Var<uint8_t, 2, ccli::MaxLimit<2>> limitVar("limit"sv, ""sv, { 3, 4 });
+
+	assert(uvec3Var.value().at(0) == 1 && uvec3Var.value().at(1) == 2 && uvec3Var.value().at(2) == 3);
+	assert(stringVar.value().at(0) == "This is a test" && stringVar.value().at(1) == "really");
+	assert(limitVar.value().at(0) == 2 && limitVar.value().at(1) == 2);
 
 	try {
 		const char* argv[] = { "-uvec3", "5,6,7", "-string", "This is not a test,or is it", "-limit", "100,200" };
 		ccli::parseArgs(std::size(argv), argv);
-		assert(uvec3Var.value().at(0) == 5 && uvec3Var.value().at(1) == 6 && uvec3Var.value().at(2) == 7);
-		assert(stringVar.value().at(0) == "This is not a test" && stringVar.value().at(1) == "or is it");
-		assert(limitVar.value().at(0) == 2 && limitVar.value().at(1) == 2);
 	}
 	catch (ccli::CCLIError& e) {
 		std::cout << "Caught error: " << e.message() << std::endl;
 	}
+	assert(uvec3Var.value().at(0) == 5 && uvec3Var.value().at(1) == 6 && uvec3Var.value().at(2) == 7);
+	assert(stringVar.value().at(0) == "This is not a test" && stringVar.value().at(1) == "or is it");
+	assert(limitVar.value().at(0) == 2 && limitVar.value().at(1) == 2);
 }
 
-void test3() {
+void lambdaCallbackTest() {
 	float value = 0.0f;
-	ccli::Var<float> lambdaVar("lambda", "", 100.0f, 0, "",
+	ccli::Var<float> lambdaVar("lambda"sv, ""sv, 100.0f, 0, ""sv,
 		[&](const ccli::Storage<float>& v) {
 			value = v.at(0);
 		}
 	);
 	assert(value == 0.0f);
 	float value2 = 0.0f;
-	ccli::Var<float> lambdaVar2("lambdaLazy", "", 100.0f, ccli::Flag::MANUAL_EXEC, "",
+	ccli::Var<float> lambdaVar2("lambdaLazy"sv, ""sv, 100.0f, ccli::Flag::MANUAL_EXEC, ""sv,
 		[&](const ccli::Storage<float>& v) {
 			value2 = v.at(0);
 		}
 	);
 
-	const char* argv[] = { "-lambda", "222", "-lambdaLazy", "222" };
-	ccli::parseArgs(std::size(argv), argv);
+	try {
+		const char* argv[] = { "-lambda", "222", "-lambdaLazy", "222" };
+		ccli::parseArgs(std::size(argv), argv);
+	}
+	catch (ccli::CCLIError& e) {
+		std::cout << "Caught error: " << e.message() << std::endl;
+	}
 	assert(std::abs(222.0f - value) < std::numeric_limits<float>::epsilon());
 
 	lambdaVar.value(300.0f);
@@ -105,7 +132,7 @@ void test3() {
 	assert(value2 == 0.0f);
 }
 
-void test4() {
+void exceptionTest() {
 	try {
 		throw ccli::FileError{ "a/file/name" };
 	}
@@ -125,7 +152,7 @@ void test4() {
 			assert(e.unconvertibleValueString() == "badValue"sv);
 			assert(&e.variable() == &floatVar);
 			assert(e.what() && strlen(e.what()));
-			assert(e.message().size());
+			assert(not e.message().empty());
 		}
 		catch (...) {
 			assert(false);
@@ -144,7 +171,7 @@ void test4() {
 			didCatch = true;
 			assert(e.unknownName() == "-aBadVariableNameWhichDoesNotExist"sv);
 			assert(e.what() && strlen(e.what()));
-			assert(e.message().size());
+			assert(not e.message().empty());
 		}
 		catch (...) {
 			assert(false);
@@ -163,7 +190,7 @@ void test4() {
 			didCatch = true;
 			assert(e.duplicatedName() == "float"sv);
 			assert(e.what() && strlen(e.what()));
-			assert(e.message().size());
+			assert(not e.message().empty());
 		}
 		catch (...) {
 			assert(false);
@@ -174,10 +201,11 @@ void test4() {
 }
 
 int main(int argc, char* argv[]) {
-	test1();
-	test2();
-	test3();
-	test4();
+	basicBoolTest();
+	immutableTest();
+	arrayTest();
+	lambdaCallbackTest();
+	exceptionTest();
 
 	ccli::Var<float, 4, ccli::MaxLimit<1>, ccli::MinLimit<-1>> float_var1("f1", "float1", {0}, ccli::NONE, "First bool Var");
 	ccli::Var<float, 4> float_var2("f2", "float2", {0}, ccli::NONE, "First bool Var");
