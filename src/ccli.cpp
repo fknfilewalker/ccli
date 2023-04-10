@@ -282,7 +282,7 @@ void ccli::writeConfig(const std::string& cfgFile)
 		outStream << '\"' << snd << "\"\n";
 	}
 	// write config
-	auto outString = outStream.str();
+	const auto outString = outStream.str();
 	if (!outString.empty()) writeConfigFile(cfgFile, outString);
 }
 
@@ -382,10 +382,20 @@ bool ccli::VarBase::isCallbackAutoExecuted() const noexcept
 	return !(_flags & MANUAL_EXEC);
 }
 
-void ccli::VarBase::locked(const bool locked)
+void ccli::VarBase::lock() noexcept
 {
-	if(locked) _flags = _flags | LOCKED;
-	else _flags = _flags ^ LOCKED;
+	_flags = _flags | LOCKED;
+}
+
+void ccli::VarBase::unlock() noexcept
+{
+	_flags = _flags ^ LOCKED;
+}
+
+void ccli::VarBase::locked(const bool locked) noexcept
+{
+	if (locked) lock();
+	else unlock();
 }
 
 template <typename T>
