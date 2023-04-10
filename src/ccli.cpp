@@ -282,8 +282,7 @@ void ccli::writeConfig(const std::string& cfgFile)
 		outStream << '\"' << snd << "\"\n";
 	}
 	// write config
-	const auto outString = outStream.str();
-	if (!outString.empty()) writeConfigFile(cfgFile, outString);
+	if (outStream.tellp()) writeConfigFile(cfgFile, outStream.view());
 }
 
 void ccli::executeCallbacks()
