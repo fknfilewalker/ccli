@@ -259,49 +259,39 @@ public:
 		[[nodiscard]] bool isFloatingPoint() const override { return std::is_floating_point_v<TData>; }
 		[[nodiscard]] bool isString() const override { return std::is_same_v<TData, std::string>; }
 
-		[[nodiscard]] std::optional<bool> asBool(size_t idx= 0) const override
+		[[nodiscard]] std::optional<bool> asBool(size_t idx = 0) const override
 		{
-			if constexpr (std::is_same_v<TData, std::string>)
-			{
-				return {};
-			}
-			else
+			if constexpr (not std::is_same_v<TData, std::string>)
 			{
 				return { static_cast<bool>(_value.at(idx)) };
 			}
+			return {};
 		}
 
-		[[nodiscard]] std::optional<long long> asInt(size_t idx= 0) const override
+		[[nodiscard]] std::optional<long long> asInt(size_t idx = 0) const override
 		{
-			if constexpr (std::is_same_v<TData, std::string>)
-			{
-				return {};
-			}
-			else
+			if constexpr (not std::is_same_v<TData, std::string>)
 			{
 				return { static_cast<long long>(_value.at(idx)) };
 			}
+			return {};
 		}
 
-		[[nodiscard]] std::optional<double> asFloat(size_t idx= 0) const override
+		[[nodiscard]] std::optional<double> asFloat(size_t idx = 0) const override
 		{
-			if constexpr (std::is_same_v<TData, std::string>)
-			{
-				return {};
-			}
-			else
+			if constexpr (not std::is_same_v<TData, std::string>)
 			{
 				return { static_cast<double>(_value.at(idx)) };
 			}
+			return {};
 		}
 
-		[[nodiscard]] std::optional<std::string_view> asString(size_t idx= 0) const override
+		[[nodiscard]] std::optional<std::string_view> asString(size_t idx = 0) const override
 		{
 			if constexpr (std::is_same_v<TData, std::string>)
 			{
 				return { std::string_view{ _value.at(idx) } };
 			}
-
 			return {};
 		}
 
