@@ -102,21 +102,21 @@ void arrayTest()
 void lambdaCallbackTest() {
 	float value = 0.0f;
 	ccli::Var<float> lambdaVar("lambda"sv, ""sv, 100.0f, 0, ""sv,
-		[&](const float& v) {
+		[&](float v) {
 			value = v;
 		}
 	);
 	assert(value == 0.0f);
 	float value2 = 0.0f;
 	ccli::Var<float> lambdaVar2("lambdaLazy"sv, ""sv, 100.0f, ccli::Flag::MANUAL_EXEC, ""sv,
-		[&](const float& v) {
+		[&](float v) {
 			value2 = v;
 		}
 	);
 
 	std::array<float, 3> values3 = { 0.0f, 0.0f,0.0f };
 	ccli::Var<float, 3> lambdaVar3("arrayLambda"sv, ""sv, { 100.0f , 200.0f, 300.0f }, 0, ""sv,
-		[&](const std::span<const float> v) {
+		[&](std::span<const float> v) {
 			assert(v.size() == values3.size());
 			std::copy(v.begin(), v.end(), values3.begin());
 		}
