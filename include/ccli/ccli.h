@@ -29,6 +29,7 @@ SOFTWARE.
 #include <functional>
 #include <sstream>
 #include <optional>
+#include <span>
 #include <map>
 
 class ccli
@@ -130,7 +131,9 @@ public:
 	struct Storage
 	{
 		static_assert(S >= 1, "Size must be larger 0");
-		std::array<TData, S> data;
+		using TUnderlying = std::array<TData, S>;
+		using TParameter = std::span<const TData>;
+		TUnderlying data;
 
 		static constexpr size_t size() noexcept { return S; }
 		auto& at(size_t idx) { return data.at(idx); }
@@ -143,7 +146,9 @@ public:
 	template <typename TData>
 	struct Storage<TData, 1>
 	{
-		TData data;
+		using TUnderlying = TData;
+		using TParameter = const TData&;
+		TUnderlying data;
 
 		Storage() = default;
 		template <typename U>
@@ -201,6 +206,7 @@ public:
 
 	public:
 		using TStorage = Storage<TData, S>;
+		using TCallback= std::function<void(typename TStorage::TParameter)>;
 		static_assert(std::disjunction_v<std::is_integral<TData>, std::is_floating_point<TData>, std::is_same<TData, std::string>>
 			, "Type must be integral, floating-point or string");
 		static_assert((!std::is_same_v<TData, std::string> && !std::is_same_v<TData, bool>) || sizeof...(TLimits) == 0,
@@ -208,7 +214,7 @@ public:
 
 		Var(const std::string_view shortName, const std::string_view longName, const TStorage& value = {},
 		    const uint32_t flags = NONE, const std::string_view description = {},
-		    const std::function<void(const Storage<TData, S>&)> callback = {})
+		    const TCallback callback = {})
 			: VarBase(shortName, longName, flags, description, callback != nullptr),
 				_callback{ callback }, _callbackCharged{ false }, _value{ LimitApplier<TLimits...>::apply(value) } {}
 
@@ -248,7 +254,7 @@ public:
 		{
 			if (hasCallback() && _callbackCharged)
 			{
-				_callback(_value);
+				_callback(_value.data);
 				_callbackCharged = false;
 				return true;
 			}
@@ -347,7 +353,7 @@ public:
 		}
 
 		static constexpr const char* _delimiter = ",";
-		const std::function<void(const Storage<TData, S>&)> _callback;
+		const TCallback _callback;
 		bool _callbackCharged;
 		TStorage _value;
 	};
