@@ -195,6 +195,24 @@ void exceptionTest() {
 	}
 
 	{
+		// Check that parsing errors are deferred
+		const char* argv[] = { "-aBadVariableNameWhichDoesNotExist", "someValue", "-anotherBadVariableName", "-goodVarName", "123", "234"};
+		ccli::Var<float, 2> floatVar("goodVarName", "", { 0.0f, 0.0f } );
+		try {
+			ccli::parseArgs(std::size(argv), argv);
+		}
+		catch (const ccli::UnknownVarNameError& e) {
+			assert(e.unknownName() == "-aBadVariableNameWhichDoesNotExist"sv);
+		}
+		catch (...) {
+			assert(false);
+		}
+
+		assert(floatVar.value()[0] == 123);
+		assert(floatVar.value()[1] == 234);
+	}
+
+	{
 		bool didCatch = false;
 		try {
 			ccli::Var<float, 1> floatVar1("f1", "float", 0.0);

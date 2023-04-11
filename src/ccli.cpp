@@ -181,6 +181,8 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 		}
 	}
 
+	std::optional<ccli::UnknownVarNameError> errorToThrow;
+
 	VarBase* var = nullptr;
 	size_t idxOffset = 0;
 	for (; i < argc; i++)
@@ -199,9 +201,9 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 			if (longName) var = findVarByLongName(arg.substr(2));
 			else if (shortName) var = findVarByShortName(arg.substr(1));
 			
-			// error if not found
-			if (var == nullptr) {
-				throw ccli::UnknownVarNameError{ std::string{ arg } };
+			// error if not found -> throw the error after parsing the rest of the arguments
+			if (var == nullptr && !errorToThrow.has_value()) {
+				errorToThrow.emplace( std::string{ arg } );
 			}
 		}
 		// Var found
@@ -213,6 +215,11 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 	
 	// Var is last argument
 	if (var && var->isBool() && var->size() == 1 && idxOffset == 0) var->setValueStringInternal("");
+
+	// Finally throw any potential error
+	if (errorToThrow.has_value()) {
+		throw* errorToThrow;
+	}
 }
 
 ccli::ConfigCache ccli::loadConfig(const std::string& cfgFile)
