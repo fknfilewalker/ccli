@@ -552,12 +552,12 @@ bool ccli::CSVParser::hasNext() const
 
 std::string_view ccli::CSVParser::next()
 {
-		_pos = _data.find(_delimiter, _current);
-		_token = _data.substr(_current, _pos - _current);
-		_current = _pos + 1;
-		_count++;
+	_pos = _data.find(_delimiter, _current);
+	_token = _data.substr(_current, _pos - _current);
+	_current = _pos + 1;
+	_count++;
 
-		return _token;
+	return _token;
 }
 
 size_t ccli::CSVParser::count() const
