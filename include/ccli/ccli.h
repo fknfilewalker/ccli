@@ -421,4 +421,6 @@ public:
 
 	template<typename T, typename F>
 	Var(std::string_view, std::string_view, T, uint32_t, std::string_view, F) -> Var<T, 1>;
+
+	Var(std::string_view, std::string_view, const char*, uint32_t = 0, std::string_view = "")->Var<std::string, 1>;
 };
