@@ -350,9 +350,9 @@ void multiValueParsing() {
 		const char* argv[] = { "-float", "1,2,3", "4,5,6", "7,8,9", "-b", "-int", "1,2", "3,4"};
 		ccli::parseArgs(std::size(argv), argv);
 
-		float x = 1.0;
+		uint32_t x = 1;
 		for (auto f : myVar1.value()) {
-			assert(f == x++);
+			assert(static_cast<uint32_t>(f) == x++);
 		}
 
 		assert(myVar2.value() == true);
