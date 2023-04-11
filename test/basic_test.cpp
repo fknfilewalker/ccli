@@ -10,10 +10,10 @@ using namespace std::literals;
 
 void basicBoolTest()
 {
-	ccli::Var<bool> boolVar1("b1"sv, "bool1"sv, 0, ccli::NONE, "First bool Var"sv);
-	ccli::Var<bool> boolVar2("b2"sv, "bool2"sv, false, ccli::NONE, "Second bool Var"sv);
-	ccli::Var<bool> boolVar3("b3"sv, "bool3"sv, 1, ccli::NONE, "Third bool Var"sv);
-	ccli::Var<bool> boolVar4("b4"sv, "bool4"sv, true, ccli::NONE, "Fourth bool Var"sv);
+	ccli::Var<bool> boolVar1("b1"sv, "bool1"sv, 0, ccli::None, "First bool Var"sv);
+	ccli::Var<bool> boolVar2("b2"sv, "bool2"sv, false, ccli::None, "Second bool Var"sv);
+	ccli::Var<bool> boolVar3("b3"sv, "bool3"sv, 1, ccli::None, "Third bool Var"sv);
+	ccli::Var<bool> boolVar4("b4"sv, "bool4"sv, true, ccli::None, "Fourth bool Var"sv);
 
 	assert(boolVar1.value() == false);
 	assert(boolVar2.value() == false);
@@ -47,9 +47,9 @@ void basicBoolTest()
 
 void immutableTest()
 {
-	ccli::Var<uint32_t> readOnlyVar(""sv, "readOnly"sv, 111, ccli::READ_ONLY);
-	ccli::Var<uint32_t> cliOnlyVar(""sv, "cliOnly"sv, 222, ccli::CLI_ONLY);
-	ccli::Var<uint32_t> lockedVar(""sv, "locked"sv, 333, ccli::LOCKED);
+	ccli::Var<uint32_t> readOnlyVar(""sv, "readOnly"sv, 111, ccli::ReadOnly);
+	ccli::Var<uint32_t> cliOnlyVar(""sv, "cliOnly"sv, 222, ccli::CliOnly);
+	ccli::Var<uint32_t> lockedVar(""sv, "locked"sv, 333, ccli::Locked);
 	assert(readOnlyVar.value() == 111);
 	assert(cliOnlyVar.value() == 222);
 	assert(lockedVar.value() == 333);
@@ -108,7 +108,7 @@ void lambdaCallbackTest() {
 	);
 	assert(value == 0.0f);
 	float value2 = 0.0f;
-	ccli::Var<float> lambdaVar2("lambdaLazy"sv, ""sv, 100.0f, ccli::Flag::MANUAL_EXEC, ""sv,
+	ccli::Var<float> lambdaVar2("lambdaLazy"sv, ""sv, 100.0f, ccli::Flag::ManualExec, ""sv,
 		[&](const float v) {
 			value2 = v;
 		}
@@ -216,8 +216,8 @@ void exceptionTest() {
 
 void configTest()
 {
-	ccli::Var<uint32_t, 2> uint2Var(""sv, "uint2"sv, { 100, 200 }, ccli::CONFIG_RDWR);
-	ccli::Var<std::string> stringVar(""sv, "string"sv, { "This is a string" }, ccli::CONFIG_RDWR);
+	ccli::Var<uint32_t, 2> uint2Var(""sv, "uint2"sv, { 100, 200 }, ccli::ConfigRDWR);
+	ccli::Var<std::string> stringVar(""sv, "string"sv, { "This is a string" }, ccli::ConfigRDWR);
 
 	static constexpr auto filename = "test/configTest.cfg";
 	try {
@@ -241,8 +241,8 @@ void configTest()
 
 void configTest2()
 {
-	ccli::Var<uint32_t> uintVar(""sv, "uint"sv, 100, ccli::CONFIG_RD);
-	ccli::Var<std::string> stringVar(""sv, "string"sv, { "This is a string" }, ccli::CONFIG_RDWR);
+	ccli::Var<uint32_t> uintVar(""sv, "uint"sv, 100, ccli::ConfigRead);
+	ccli::Var<std::string> stringVar(""sv, "string"sv, { "This is a string" }, ccli::ConfigRDWR);
 
 	assert(uintVar.value() == 100);
 	assert(stringVar.value() == "This is a string");
@@ -283,14 +283,14 @@ void configTest2()
 
 void registeredVarTest()
 {
-	ccli::Var<float, 4, ccli::MaxLimit<1>, ccli::MinLimit<-1>> float_var1("f1", "float1", { 0 }, ccli::NONE, "First bool Var");
-	ccli::Var<float, 4> float_var2("f2", "float2", { 0 }, ccli::NONE, "First bool Var");
-	ccli::Var<float, 2> var_test("t", "test", { 100, 200 }, ccli::CONFIG_RDWR);
-	ccli::Var<short, 1, ccli::MaxLimit<500>> short_var("s", "short", 0);
-	ccli::Var<bool> bool_var("b", "bool1", false);
+	ccli::Var<float, 4, ccli::MaxLimit<1>, ccli::MinLimit<-1>> float4Var("f1", "float1", { 0 }, ccli::None, "First bool Var");
+	ccli::Var<float, 4> float4Var2("f2", "float2", { 0.0f }, ccli::None, "First bool Var");
+	ccli::Var<float, 2> float2Var{"t"sv, "test"sv, { 100.0f, 200.0f }, ccli::ConfigRDWR };
+	ccli::Var<short, 1, ccli::MaxLimit<500>> shortVar("s", "short", 0);
+	ccli::Var<bool> boolVar("b", "bool1", false);
 
-	ccli::Var<std::string> string_var("str1", "string1", "A cool value");
-	ccli::Var<std::string> string_var2(std::string{ "str2" }, "string2", "Another cool value");
+	ccli::Var<std::string> stringVar("str1", "string1", "A cool value");
+	ccli::Var<std::string> stringVar2(std::string{ "str2" }, "string2", "Another cool value");
 
 	std::cout << "Currently registerd variables..." << std::endl;
 	ccli::forEachVar([](ccli::VarBase& var, const size_t idx) -> ccli::IterationDecision {
@@ -298,11 +298,11 @@ void registeredVarTest()
 		return {};
 		});
 
-	std::cout << *var_test.asBool() << std::endl;
-	std::cout << *var_test.asInt() << std::endl;
-	std::cout << *var_test.asFloat() << std::endl;
-	std::cout << var_test.asString().has_value() << std::endl;
-	std::cout << *string_var.asString() << std::endl;
+	std::cout << *float2Var.asBool() << std::endl;
+	std::cout << *float2Var.asInt() << std::endl;
+	std::cout << *float2Var.asFloat() << std::endl;
+	std::cout << float2Var.asString().has_value() << std::endl;
+	std::cout << *stringVar.asString() << std::endl;
 }
 
 void deductionTest() {

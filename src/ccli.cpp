@@ -30,7 +30,6 @@ SOFTWARE.
 #include <fstream>
 #include <filesystem>
 #include <charconv>
-#include <deque>
 
 namespace
 {
@@ -175,7 +174,7 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 	if (argc > 0)
 	{
 		// check if first arg is exe
-		std::string_view exePath{ argv[0] };
+		const std::string_view exePath{ argv[0] };
 		if (std::filesystem::exists(std::filesystem::status(exePath)))
 		{
 			i++;
@@ -354,42 +353,42 @@ bool ccli::VarBase::hasCallback() const noexcept
 
 bool ccli::VarBase::isCliOnly() const noexcept
 {
-	return _flags & CLI_ONLY;
+	return _flags & CliOnly;
 }
 
 bool ccli::VarBase::isReadOnly() const noexcept
 {
-	return _flags & READ_ONLY;
+	return _flags & ReadOnly;
 }
 
 bool ccli::VarBase::isLocked() const noexcept
 {
-	return _flags & LOCKED;
+	return _flags & Locked;
 }
 
 bool ccli::VarBase::isConfigRead() const noexcept
 {
-	return !_longName.empty() && ((_flags & CONFIG_RD) == CONFIG_RD);
+	return !_longName.empty() && ((_flags & ConfigRead) == ConfigRead);
 }
 
 bool ccli::VarBase::isConfigReadWrite() const noexcept
 {
-	return !_longName.empty() && ((_flags & CONFIG_RDWR) == CONFIG_RDWR);
+	return !_longName.empty() && ((_flags & ConfigRDWR) == ConfigRDWR);
 }
 
 bool ccli::VarBase::isCallbackAutoExecuted() const noexcept
 {
-	return !(_flags & MANUAL_EXEC);
+	return !(_flags & ManualExec);
 }
 
 void ccli::VarBase::lock() noexcept
 {
-	_flags = _flags | LOCKED;
+	_flags = _flags | Locked;
 }
 
 void ccli::VarBase::unlock() noexcept
 {
-	_flags = _flags ^ LOCKED;
+	_flags = _flags ^ Locked;
 }
 
 void ccli::VarBase::locked(const bool locked) noexcept
@@ -398,7 +397,7 @@ void ccli::VarBase::locked(const bool locked) noexcept
 	else unlock();
 }
 
-size_t ccli::VarBase::setValueStringInternal(std::string_view string, size_t offset)
+size_t ccli::VarBase::setValueStringInternal(const std::string_view string, const size_t offset)
 {
 	if (isReadOnly() || isLocked()) return offset;
 	// empty string only allowed for bool and string
@@ -406,13 +405,13 @@ size_t ccli::VarBase::setValueStringInternal(std::string_view string, size_t off
 		if (!isBool() && !isString()) return offset;
 	}
 
-	auto maxSize = size();
+	const auto maxSize = size();
 	CSVParser csv{ string, _delimiter };
 	do
 	{
 		if (csv.count()+ offset >= maxSize) break;
 
-		auto token = csv.next();
+		const auto token = csv.next();
 		setValueStringInternalAtIndex(csv.count() + offset - 1, token);
 	} while (csv.hasNext());
 
@@ -565,7 +564,7 @@ size_t ccli::CSVParser::count() const
 	return _count;
 }
 
-std::string_view ccli::CSVParser::token()
+std::string_view ccli::CSVParser::token() const
 {
 	return _token;
 }
