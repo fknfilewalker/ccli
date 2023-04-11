@@ -102,26 +102,37 @@ void arrayTest()
 void lambdaCallbackTest() {
 	float value = 0.0f;
 	ccli::Var<float> lambdaVar("lambda"sv, ""sv, 100.0f, 0, ""sv,
-		[&](const ccli::Storage<float>& v) {
-			value = v.at(0);
+		[&](const float& v) {
+			value = v;
 		}
 	);
 	assert(value == 0.0f);
 	float value2 = 0.0f;
 	ccli::Var<float> lambdaVar2("lambdaLazy"sv, ""sv, 100.0f, ccli::Flag::MANUAL_EXEC, ""sv,
-		[&](const ccli::Storage<float>& v) {
-			value2 = v.at(0);
+		[&](const float& v) {
+			value2 = v;
+		}
+	);
+
+	std::array<float, 3> values3 = { 0.0f, 0.0f,0.0f };
+	ccli::Var<float, 3> lambdaVar3("arrayLambda"sv, ""sv, { 100.0f , 200.0f, 300.0f }, 0, ""sv,
+		[&](const std::span<const float> v) {
+			assert(v.size() == values3.size());
+			std::copy(v.begin(), v.end(), values3.begin());
 		}
 	);
 
 	try {
-		const char* argv[] = { "-lambda", "222", "-lambdaLazy", "222" };
+		const char* argv[] = { "-lambda", "222", "-lambdaLazy", "222", "-arrayLambda", "1,2,3"};
 		ccli::parseArgs(std::size(argv), argv);
 	}
 	catch (ccli::CCLIError& e) {
 		std::cout << "Caught error: " << e.message() << std::endl;
 	}
 	assert(std::abs(222.0f - value) < std::numeric_limits<float>::epsilon());
+	assert(1.0f - values3[0] < std::numeric_limits<float>::epsilon());
+	assert(2.0f - values3[1] < std::numeric_limits<float>::epsilon());
+	assert(3.0f - values3[2] < std::numeric_limits<float>::epsilon());
 
 	lambdaVar.value(300.0f);
 	assert(std::abs(300.0f - value) < std::numeric_limits<float>::epsilon());
