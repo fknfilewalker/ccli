@@ -32,6 +32,11 @@ void basicBoolTest()
 	assert(boolVar3.value() == false);
 	assert(boolVar4.value() == false);
 
+	assert(boolVar1 == true);
+	assert(boolVar2 == true);
+	assert(boolVar3 == false);
+	assert(boolVar4 == false);
+
 	try {
 		const char* argv[] = { "-b1", "0", "-b2", "-b3", "--bool4" };
 		ccli::parseArgs(std::size(argv), argv);
@@ -53,6 +58,10 @@ void immutableTest()
 	assert(readOnlyVar.value() == 111);
 	assert(cliOnlyVar.value() == 222);
 	assert(lockedVar.value() == 333);
+
+	assert(readOnlyVar == 111);
+	assert(cliOnlyVar == 222);
+	assert(lockedVar == 333);
 
 	try {
 		const char* argv[] = { "--readOnly", "1", "--cliOnly", "2", "--locked", "3"};
@@ -84,8 +93,11 @@ void arrayTest()
 	ccli::Var<uint8_t, 2, ccli::MaxLimit<2>> limitVar("limit"sv, ""sv, { 3, 4 });
 
 	assert(uvec3Var.value().at(0) == 1 && uvec3Var.value().at(1) == 2 && uvec3Var.value().at(2) == 3);
+	assert(uvec3Var[0] == 1 && uvec3Var[1] == 2 && uvec3Var[2] == 3);
 	assert(stringVar.value().at(0) == "This is a test" && stringVar.value().at(1) == "really");
+	assert(stringVar[0] == "This is a test" && stringVar[1] == "really");
 	assert(limitVar.value().at(0) == 2 && limitVar.value().at(1) == 2);
+	assert(limitVar[0] == 2 && limitVar[1] == 2);
 
 	try {
 		const char* argv[] = { "-uvec3", "5,6,7", "-string", "This is not a test,or is it", "-limit", "100,200" };
@@ -95,8 +107,11 @@ void arrayTest()
 		std::cout << "Caught error: " << e.message() << std::endl;
 	}
 	assert(uvec3Var.value().at(0) == 5 && uvec3Var.value().at(1) == 6 && uvec3Var.value().at(2) == 7);
+	assert(uvec3Var[0] == 5 && uvec3Var[1] == 6 && uvec3Var[2] == 7);
 	assert(stringVar.value().at(0) == "This is not a test" && stringVar.value().at(1) == "or is it");
+	assert(stringVar[0] == "This is not a test" && stringVar[1] == "or is it");
 	assert(limitVar.value().at(0) == 2 && limitVar.value().at(1) == 2);
+	assert(limitVar[0] == 2 && limitVar[1] == 2);
 }
 
 void lambdaCallbackTest() {

@@ -258,6 +258,9 @@ public:
 
 		const auto& value() const noexcept { return _value.data; }
 
+		operator const TData&() const noexcept requires(S == 1) { return _value.data; }
+		const TData& operator[](size_t idx) const noexcept requires(S > 1) { return _value.data[idx]; }
+
 		std::string valueString() override
 		{
 			std::stringstream stream;
