@@ -34,15 +34,14 @@ SOFTWARE.
 
 class ccli
 {
-private:
 	class CSVParser {
 	public:
-		CSVParser(std::string_view d, char del) : _data{ d }, _delimiter{ del } {};
+		CSVParser(const std::string_view d, const char del) : _delimiter{ del }, _data{ d } {}
 
-		bool hasNext() const;
+		[[nodiscard]] bool hasNext() const;
 		std::string_view next();
-		size_t count() const;
-		std::string_view token();
+		[[nodiscard]] size_t count() const;
+		std::string_view token() const;
 
 	private:
 		char _delimiter;
@@ -77,13 +76,13 @@ public:
 
 	enum Flag
 	{
-		NONE		= (0 << 0),
-		READ_ONLY	= (1 << 0),	// display only, cannot be modified at all
-		CLI_ONLY	= (1 << 1),	// can only be set through parseArgs
-		LOCKED		= (1 << 2),	// this var is locked, cannot be modified until unlocked
-		CONFIG_RD	= (1 << 3),	// load variable from config file
-		CONFIG_RDWR = (3 << 3),	// load variable from config file and save changes back to config file
-		MANUAL_EXEC = (1 << 5)	// execute callback only when executeCallback/executeCallbacks is called
+		None		= (0 << 0),
+		ReadOnly	= (1 << 0),	// display only, cannot be modified at all
+		CliOnly		= (1 << 1),	// can only be set through parseArgs
+		Locked		= (1 << 2),	// this var is locked, cannot be modified until unlocked
+		ConfigRead	= (1 << 3),	// load variable from config file
+		ConfigRDWR	= (3 << 3),	// load variable from config file and save changes back to config file
+		ManualExec	= (1 << 5)	// execute callback only when executeCallback/executeCallbacks is called
 	};
 
 	class VarBase
@@ -132,7 +131,7 @@ public:
 		void locked(bool locked) noexcept;
 
 	protected:
-		static constexpr const char _delimiter = ',';
+		static constexpr char _delimiter = ',';
 
 		size_t setValueStringInternal(std::string_view, size_t offset = 0);
 		virtual void setValueStringInternalAtIndex(size_t, std::string_view) = 0;
@@ -188,7 +187,7 @@ public:
 	};
 
 	template <class T, class... U>
-	Storage(T, U...) -> Storage<T, 1 + sizeof...(U)>;
+	explicit Storage(T, U...) -> Storage<T, 1 + sizeof...(U)>;
 
 
 	template <auto Value>
@@ -240,7 +239,7 @@ public:
 			"String and boolean values may not have limits");
 
 		Var(const std::string_view shortName, const std::string_view longName, const TStorage& value = {},
-		    const uint32_t flags = NONE, const std::string_view description = {},
+		    const uint32_t flags = None, const std::string_view description = {},
 		    const TCallback callback = {})
 			: VarBase(shortName, longName, flags, description, callback != nullptr),
 				_callback{ callback }, _callbackCharged{ false }, _value{ LimitApplier<TLimits...>::apply(value) } {}
@@ -409,14 +408,14 @@ public:
 
 	// Deduction guides
 	template<typename T, int S>
-	Var(const std::string_view, const std::string_view, const T(&)[S]) -> Var<T, S>;
+	Var(std::string_view, std::string_view, const T(&)[S], uint32_t = 0, std::string_view = "") -> Var<T, S>;
 
 	template<typename T, int S, typename F>
-	Var(const std::string_view, const std::string_view, const T(&)[S], uint32_t, std::string_view, F) -> Var<T, S>;
+	Var(std::string_view, std::string_view, const T(&)[S], uint32_t, std::string_view, F) -> Var<T, S>;
 
 	template<typename T>
-	Var(const std::string_view, const std::string_view, T) -> Var<T, 1>;
+	Var(std::string_view, std::string_view, T, uint32_t = 0, std::string_view = "") -> Var<T, 1>;
 
 	template<typename T, typename F>
-	Var(const std::string_view, const std::string_view, T, uint32_t, std::string_view, F) -> Var<T, 1>;
+	Var(std::string_view, std::string_view, T, uint32_t, std::string_view, F) -> Var<T, 1>;
 };
