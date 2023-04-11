@@ -1,5 +1,9 @@
-# Cool Command Line Interface
+# ccli
 
+A static command line argument parsing library written in c++20
+# Examples
+
+### Basic
 ```c++
 #include <ccli/ccli.h>
 // optional
@@ -7,17 +11,17 @@
 #include <string_view>
 using namespace std::literals;
 
-// set vars local or global
 // declares a bool var that can be set with either -b or --bool
-ccli::Var<bool> boolVar("b"sv, "bool"sv, false, ccli::NONE, "First bool Var"sv);
-// declares a uint32_t var that can be set with --count
-ccli::Var<uint32_t> uintVar(""sv, "count"sv, 11);
+ccli::Var<bool> boolVar("b"sv, "bool"sv, false, ccli::None, "First bool Var"sv);
+// declares a uint32_t var (type decution) that can be set with --uint
+ccli::Var uintVar(""sv, "uint"sv, 11u);
 // declares a float2 var that can be set with --fvec2
-ccli::Var<float, 2> fvec2Var(""sv, "fvec2"sv, { 0.5f,1.0f });
+ccli::Var<float, 2> fvec2Var(""sv, "fvec2"sv, { 0.5f, 1.0f });
 
-// argv: -b --count 100 --fvec2 1.4f,1.9f
+// argv: -b --uint 100 --fvec2 1.4f 1.9f
 int main(int argc, char* argv[]) {
 	try {
+		// parse cl arguments and update all registered vars
 		ccli::parseArgs(argc, argv);
 	}
 	catch (ccli::CCLIError& e) {
