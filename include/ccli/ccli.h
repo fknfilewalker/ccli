@@ -34,6 +34,25 @@ SOFTWARE.
 
 class ccli
 {
+private:
+	class CSVParser {
+	public:
+		CSVParser(std::string_view d, char del) : _data{ d }, _delimiter{ del } {};
+
+		bool hasNext() const;
+		std::string_view next();
+		size_t count() const;
+		std::string_view token();
+
+	private:
+		char _delimiter;
+		size_t _count{ 0 };
+		size_t _current{ 0 };
+		size_t _pos{ 0 };
+		std::string_view _data;
+		std::string_view _token;
+	};
+
 public:
 	struct IterationDecision
 	{
@@ -84,7 +103,7 @@ public:
 		[[nodiscard]] const std::string& description() const noexcept;
 
 		virtual std::string valueString() = 0;
-		virtual void valueString(std::string_view string) = 0;
+		void valueString(std::string_view string);
 
 		[[nodiscard]] bool hasCallback() const noexcept;
 		virtual bool executeCallback() = 0;
@@ -113,7 +132,11 @@ public:
 		void locked(bool locked) noexcept;
 
 	protected:
-		virtual void setValueStringInternal(std::string_view string) = 0;
+		static constexpr const char _delimiter = ',';
+
+		size_t setValueStringInternal(std::string_view, size_t offset = 0);
+		virtual void setValueStringInternalAtIndex(size_t, std::string_view) = 0;
+		virtual void applyLimitsAndDoCallback() = 0;
 
 		static long long parseIntegral(const VarBase&, std::string_view);
 		static double parseDouble(const VarBase&, std::string_view);
@@ -233,13 +256,9 @@ public:
 			if (isReadOnly() || isCliOnly() || isLocked()) return;
 			setValueInternal(value);
 		}
+
 		const auto& value() const noexcept { return _value.data; }
 
-		void valueString(const std::string_view string) override
-		{
-			if (isReadOnly() || isCliOnly() || isLocked()) return;
-			setValueStringInternal(string);
-		}
 		std::string valueString() override
 		{
 			std::stringstream stream;
@@ -321,32 +340,16 @@ public:
 			}
 		}
 
-		void setValueStringInternal(std::string_view string) override
-		{
-			if (isReadOnly() || isLocked()) return;
-			// empty string only allowed for bool and string
-			if constexpr (!std::is_same_v<TData, bool> && !std::is_same_v<TData, std::string>) if (string.empty())
-				return;
+		void setValueStringInternalAtIndex(size_t idx, std::string_view token) override {
+			if (idx >= _value.size()) return;
 
-			size_t count = 0;
-			size_t current = 0;
-			size_t pos;
-			do
-			{
-				pos = string.find(_delimiter, current);
-				std::string_view token = string.substr(current, pos - current);
-				current = pos + 1;
+			if constexpr (std::is_floating_point_v<TData>) _value.at(idx) = static_cast<TData>(parseDouble(*this, token));
+			else if constexpr (std::is_same_v<TData, bool>) _value.at(idx) = parseBool(token);
+			else if constexpr (std::is_integral_v<TData>) _value.at(idx) = static_cast<TData>(parseIntegral(*this, token));
+			else if constexpr (std::is_same_v<TData, std::string>) _value.at(idx) = token;
+		}
 
-				if (count > _value.size() - 1) break;
-
-				if constexpr (std::is_floating_point_v<TData>) _value.at(count) = static_cast<TData>(parseDouble(*this, token));
-				else if constexpr (std::is_same_v<TData, bool>) _value.at(count) = parseBool(token);
-				else if constexpr (std::is_integral_v<TData>) _value.at(count) = static_cast<TData>(parseIntegral(*this, token));
-				else if constexpr (std::is_same_v<TData, std::string>) _value.at(count) = token;
-				count++;
-			}
-			while (pos != std::string::npos);
-
+		void applyLimitsAndDoCallback() override {
 			if constexpr (!std::is_same_v<TData, std::string>)
 			{
 				_value = LimitApplier<TLimits...>::apply(_value);
@@ -356,7 +359,6 @@ public:
 			if (isCallbackAutoExecuted()) executeCallback();
 		}
 
-		static constexpr const char* _delimiter = ",";
 		const TCallback _callback;
 		bool _callbackCharged;
 		TStorage _value;
