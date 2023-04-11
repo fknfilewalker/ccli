@@ -305,6 +305,25 @@ void registeredVarTest()
 	std::cout << *string_var.asString() << std::endl;
 }
 
+void deductionTest() {
+	ccli::Var myVar{ "myVar"sv, ""sv, 1.0f };
+	static_assert( std::is_same_v<decltype(myVar), ccli::Var<float>>, "Could not deduce ccli::Var<float>");
+
+	auto floatLambda = [](float data) {};
+
+	ccli::Var myVar2{ "myVar2"sv, ""sv, 1.0f, 0, ""sv, floatLambda };
+	static_assert(std::is_same_v<decltype(myVar2), ccli::Var<float>>, "Could not deduce ccli::Var<float>");
+
+
+	ccli::Var myVarArray{ "myArray"sv, ""sv, { 1.0f, 2.0f, 3.0f, 4.0f } };
+	static_assert(std::is_same_v<decltype(myVarArray), ccli::Var<float, 4>>, "Could not deduce ccli::Var<float, 4>");
+
+	auto longArrayLambda = [](std::span<const long> data) {};
+
+	ccli::Var myVarArray2{ "myArray2"sv, ""sv, { 1l, 2l, 3l }, 0, ""sv, longArrayLambda };
+	static_assert(std::is_same_v<decltype(myVarArray2), ccli::Var<long, 3>>, "Could not deduce ccli::Var<long, 3>");
+}
+
 int main(int argc, char* argv[]) {
 	basicBoolTest();
 	immutableTest();
@@ -314,6 +333,7 @@ int main(int argc, char* argv[]) {
 	configTest();
 	configTest2();
 	registeredVarTest();
+	deductionTest();
 
 	return 0;
 }
