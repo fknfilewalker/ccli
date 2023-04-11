@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright(c) 2022 Lukas Lipp, Matthias Preymann
+Copyright(c) 2023 Lukas Lipp, Matthias Preymann
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this softwareand associated documentation files(the "Software"), to deal
