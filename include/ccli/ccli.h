@@ -259,6 +259,7 @@ public:
 		const auto& value() const noexcept { return _value.data; }
 
 		operator const TData&() const noexcept requires(S == 1) { return _value.data; }
+		operator const char* () const noexcept requires(S == 1 && std::is_same_v<TData, std::string>) { return _value.data.c_str(); }
 		const TData& operator[](size_t idx) const noexcept requires(S > 1) { return _value.data.at(idx); }
 
 		std::string valueString() override
