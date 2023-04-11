@@ -164,6 +164,10 @@ public:
 		std::array<TData, 1> asArray() const noexcept { return { data }; }
 	};
 
+	template <class T, class... U>
+	Storage(T, U...) -> Storage<T, 1 + sizeof...(U)>;
+
+
 	template <auto Value>
 	struct MaxLimit
 	{
@@ -400,4 +404,17 @@ public:
 	private:
 		const VarBase& _variable;
 	};
+
+	// Deduction guides
+	template<typename T, int S>
+	Var(const std::string_view, const std::string_view, const T(&)[S]) -> Var<T, S>;
+
+	template<typename T, int S, typename F>
+	Var(const std::string_view, const std::string_view, const T(&)[S], uint32_t, std::string_view, F) -> Var<T, S>;
+
+	template<typename T>
+	Var(const std::string_view, const std::string_view, T) -> Var<T, 1>;
+
+	template<typename T, typename F>
+	Var(const std::string_view, const std::string_view, T, uint32_t, std::string_view, F) -> Var<T, 1>;
 };
