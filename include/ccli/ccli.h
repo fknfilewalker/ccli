@@ -29,6 +29,7 @@ SOFTWARE.
 #include <functional>
 #include <sstream>
 #include <optional>
+#include <map>
 
 class ccli
 {
@@ -46,7 +47,10 @@ public:
 
 	class VarBase;
 	static void parseArgs(size_t argc, const char* const argv[]);
-	static void loadConfig(const std::string& cfgFile);
+
+	using ConfigCache = std::map<std::string, std::string>;
+	static ConfigCache loadConfig(const std::string& cfgFile);
+	static void writeConfig(const std::string& cfgFile, ConfigCache& cache);
 	static void writeConfig(const std::string& cfgFile);
 	static void executeCallbacks();
 	static IterationDecision forEachVar(const std::function<IterationDecision(VarBase&, size_t)>&);
@@ -214,10 +218,10 @@ public:
 		Var& operator=(const Var&) = delete;
 		Var& operator=(Var&&) = delete;
 
-		void value(const TStorage& aValue)
+		void value(const TStorage& value)
 		{
 			if (isReadOnly() || isCliOnly() || isLocked()) return;
-			setValueInternal(aValue);
+			setValueInternal(value);
 		}
 		const auto& value() const noexcept { return _value.data; }
 
