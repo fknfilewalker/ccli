@@ -244,7 +244,7 @@ void configTest2()
 		cfgfile.close();
 	}
 	try {
-		ccli::loadConfig(filename);
+		ccli::ConfigCache cache = ccli::loadConfig(filename);
 
 		assert(uintVar.value() == 150);
 		assert(stringVar.value() == "This is a test");
@@ -254,7 +254,7 @@ void configTest2()
 		assert(uintVar.value() == 200);
 		assert(stringVar.value() == "This is a joke");
 
-		ccli::writeConfig(filename);
+		ccli::writeConfig(filename, cache);
 		{
 			std::stringstream cfgfile;
 			cfgfile << std::ifstream(filename).rdbuf();

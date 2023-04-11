@@ -126,53 +126,45 @@ namespace
 		return set;
 	}
 
-	void addToCallbackSet(ccli::VarBase* aVar)
+	void addToCallbackSet(ccli::VarBase* var)
 	{
 		auto& set = getCallbackSet();
-		set.insert(aVar);
+		set.insert(var);
 	}
 
-	void removeFromCallbackSet(ccli::VarBase* aVar)
+	void removeFromCallbackSet(ccli::VarBase* var)
 	{
 		auto& set = getCallbackSet();
-		set.erase(aVar);
+		set.erase(var);
 	}
 
 	/*
 	** config
 	*/
-	// keep track of all data from loaded config
-	std::map<std::string, std::string>& getConfigMap()
+	bool doesConfigVarNeedUpdate(ccli::ConfigCache& cache, const std::string& token, const std::string& value)
 	{
-		static std::map<std::string, std::string> map;
-		return map;
-	}
-
-	bool doesConfigVarNeedUpdate(std::map<std::string, std::string>& aMap, const std::string& aToken,
-		const std::string& aValue)
-	{
-		const auto it = aMap.find(aToken);
-		if (it != aMap.end() && it->second != aValue)
+		const auto it = cache.find(token);
+		if (it != cache.end() && it->second != value)
 		{
-			it->second = aValue;
+			it->second = value;
 			return true;
 		}
-		if (it == aMap.end())
+		if (it == cache.end())
 		{
-			aMap.insert({ aToken, aValue });
+			cache.insert({ token, value });
 			return true;
 		}
 		return false;
 	}
 
-	void writeConfigFile(std::string const& aFilename, const std::string_view aContent)
+	void writeConfigFile(std::string const& filename, const std::string_view content)
 	{
-		std::ofstream file(aFilename, std::ios::out | std::ios::binary);
+		std::ofstream file(filename, std::ios::out | std::ios::binary);
 		if (!file.is_open())
 		{
-			throw ccli::FileError{ aFilename };
+			throw ccli::FileError{ filename };
 		}
-		file.write(aContent.data(), static_cast<std::streamsize>(aContent.size()));
+		file.write(content.data(), static_cast<std::streamsize>(content.size()));
 		file.close();
 	}
 }
@@ -226,10 +218,9 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 	if (var && var->isBool() && var->size() == 1) var->setValueStringInternal("");
 }
 
-void ccli::loadConfig(const std::string& cfgFile)
+ccli::ConfigCache ccli::loadConfig(const std::string& cfgFile)
 {
-	std::map<std::string, std::string>& configMap = getConfigMap();
-	configMap.clear();
+	std::map<std::string, std::string> configMap;
 	// check if file exists
 	std::ifstream f(cfgFile);
 
@@ -257,11 +248,11 @@ void ccli::loadConfig(const std::string& cfgFile)
 		}
 	}
 	f.close();
+	return configMap;
 }
 
-void ccli::writeConfig(const std::string& cfgFile)
+void ccli::writeConfig(const std::string& cfgFile, ConfigCache& cache)
 {
-	std::map<std::string, std::string>& configMap = getConfigMap();
 	const auto map = getLongNameVarMap();
 	bool write = false;
 	// update vars
@@ -270,19 +261,25 @@ void ccli::writeConfig(const std::string& cfgFile)
 		if (snd->isConfigReadWrite())
 		{
 			// also check if rdwr
-			write |= doesConfigVarNeedUpdate(configMap, fst, snd->valueString());
+			write |= doesConfigVarNeedUpdate(cache, fst, snd->valueString());
 		}
 	}
 	if (!write) return;
 	// create output string
 	std::stringstream outStream;
-	for (const auto& [fst, snd] : configMap)
+	for (const auto& [fst, snd] : cache)
 	{
 		outStream << fst << configDelimiter;
 		outStream << '\"' << snd << "\"\n";
 	}
 	// write config
 	if (outStream.tellp()) writeConfigFile(cfgFile, outStream.view());
+}
+
+void ccli::writeConfig(const std::string& cfgFile)
+{
+	ConfigCache cache;
+	writeConfig(cfgFile, cache);
 }
 
 void ccli::executeCallbacks()
