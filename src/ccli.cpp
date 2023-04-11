@@ -251,7 +251,7 @@ void ccli::loadConfig(const std::string& cfgFile)
 			if (var && var->isConfigRead())
 			{
 				var->valueString(value);
-				if (var->isConfigReadWrite()) configMap.insert({ std::move(token), std::move(value) });
+				configMap.insert({ std::move(token), std::move(value) });
 			}
 			else configMap.insert({ std::move(token), std::move(value) });
 		}
@@ -368,12 +368,12 @@ bool ccli::VarBase::isLocked() const noexcept
 
 bool ccli::VarBase::isConfigRead() const noexcept
 {
-	return !_longName.empty() && _flags & CONFIG_RD;
+	return !_longName.empty() && ((_flags & CONFIG_RD) == CONFIG_RD);
 }
 
 bool ccli::VarBase::isConfigReadWrite() const noexcept
 {
-	return !_longName.empty() && _flags & CONFIG_RDWR;
+	return !_longName.empty() && ((_flags & CONFIG_RDWR) == CONFIG_RDWR);
 }
 
 bool ccli::VarBase::isCallbackAutoExecuted() const noexcept

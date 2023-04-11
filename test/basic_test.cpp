@@ -3,6 +3,8 @@
 #include <cassert>
 #include <string_view>
 #include <array>
+#include <iostream>
+#include <fstream>
 
 using namespace std::literals;
 
@@ -203,10 +205,10 @@ void exceptionTest() {
 
 void configTest()
 {
-	ccli::Var<uint32_t, 2> uint2Var(""sv, "float2"sv, { 100, 200 }, ccli::CONFIG_RDWR);
+	ccli::Var<uint32_t, 2> uint2Var(""sv, "uint2"sv, { 100, 200 }, ccli::CONFIG_RDWR);
 	ccli::Var<std::string> stringVar(""sv, "string"sv, { "This is a string" }, ccli::CONFIG_RDWR);
 
-	static constexpr auto filename = "configTest.cfg";
+	static constexpr auto filename = "test/configTest.cfg";
 	try {
 		ccli::writeConfig(filename);
 		uint2Var.value({ 1, 1 });
@@ -224,6 +226,48 @@ void configTest()
 	constexpr std::array<uint32_t, 2> result = { 100, 200 };
 	assert(uint2Var.value() == result);
 	assert(stringVar.value() == "This is a string");
+}
+
+void configTest2()
+{
+	ccli::Var<uint32_t> uintVar(""sv, "uint"sv, 100, ccli::CONFIG_RD);
+	ccli::Var<std::string> stringVar(""sv, "string"sv, { "This is a string" }, ccli::CONFIG_RDWR);
+
+	assert(uintVar.value() == 100);
+	assert(stringVar.value() == "This is a string");
+
+	static constexpr auto filename = "test/configTest2.cfg";
+	{
+		std::ofstream cfgfile;
+		cfgfile.open(filename);
+		cfgfile << "string=\"This is a test\"\nuint=\"150\"\n";
+		cfgfile.close();
+	}
+	try {
+		ccli::loadConfig(filename);
+
+		assert(uintVar.value() == 150);
+		assert(stringVar.value() == "This is a test");
+
+		uintVar.value(200);
+		stringVar.value("This is a joke");
+		assert(uintVar.value() == 200);
+		assert(stringVar.value() == "This is a joke");
+
+		ccli::writeConfig(filename);
+		{
+			std::stringstream cfgfile;
+			cfgfile << std::ifstream(filename).rdbuf();
+			assert(cfgfile.view() == "string=\"This is a joke\"\nuint=\"150\"\n");
+		}
+	}
+	catch (ccli::CCLIError& e) {
+		std::cout << "Caught error: " << e.message() << std::endl;
+	}
+	if (remove(filename) != 0)
+	{
+		std::cout << "Error deleting file" << std::endl;
+	}
 }
 
 void registeredVarTest()
@@ -257,6 +301,7 @@ int main(int argc, char* argv[]) {
 	lambdaCallbackTest();
 	exceptionTest();
 	configTest();
+	configTest2();
 	registeredVarTest();
 
 	return 0;
