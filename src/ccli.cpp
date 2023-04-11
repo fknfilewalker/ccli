@@ -171,39 +171,34 @@ namespace
 
 void ccli::parseArgs(const size_t argc, const char* const argv[])
 {
-	std::deque<std::string> args;
-	for (size_t i = 0; i < argc; i++)
-	{
-		args.emplace_back(argv[i]);
-	}
-	if (!args.empty())
+	size_t i = 0;
+	if (argc > 0)
 	{
 		// check if first arg is exe
-		if (std::filesystem::exists(std::filesystem::status(args.front())))
+		std::string_view exePath{ argv[0] };
+		if (std::filesystem::exists(std::filesystem::status(exePath)))
 		{
-			args.pop_front();
+			i++;
 		}
 	}
 
 	VarBase* var = nullptr;
-	while (!args.empty())
+	for (; i < argc; i++)
 	{
-		auto arg = std::move(args.front());
+		std::string_view arg{ argv[i] };
 		const bool shortName = arg.size() >= 2 ? arg[0] == '-' && isalpha(arg[1]) : false;
 		const bool longName = arg.size() >= 2 ? arg[0] == '-' && arg[1] == '-' : false;
 		if (shortName || longName)
 		{
 			// arg without value (cleared otherwise)
 			if (var && var->isBool() && var->size() == 1) var->setValueStringInternal("");
-		
-			std::string_view argView{ arg };
 
 			// find new arg
-			if (longName) var = findVarByLongName(argView.substr(2));
-			else if (shortName) var = findVarByShortName(argView.substr(1));
+			if (longName) var = findVarByLongName(arg.substr(2));
+			else if (shortName) var = findVarByShortName(arg.substr(1));
 			// error if not found
 			if (var == nullptr) {
-				throw ccli::UnknownVarNameError{ std::move(arg) };
+				throw ccli::UnknownVarNameError{ std::string{ arg } };
 			}
 		}
 		// Var found
@@ -212,8 +207,8 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 			var->setValueStringInternal(arg);
 			var = nullptr;
 		}
-		args.pop_front();
 	}
+	
 	// Var is last argument
 	if (var && var->isBool() && var->size() == 1) var->setValueStringInternal("");
 }
