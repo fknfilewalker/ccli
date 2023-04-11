@@ -382,6 +382,28 @@ void multiValueParsing() {
 	}
 }
 
+void settingVariableTest() {
+	ccli::Var<float> myVar1{ "float1"sv, ""sv, 1.0f };
+
+	myVar1.value(22.0f);
+	assert(myVar1 - 22.0f < std::numeric_limits<float>::epsilon());
+
+	ccli::Var<float, 3> myVar2{ "float2"sv, ""sv, {1.0f, 2.0f, 3.0f} };
+
+	myVar1.VarBase::valueString("123");
+	assert(myVar1 - 123.0f < std::numeric_limits<float>::epsilon());
+
+	myVar2.value({ 10.0f, 20.0f, 30.0f});
+	assert(myVar2[0] - 10.0f < std::numeric_limits<float>::epsilon());
+	assert(myVar2[1] - 20.0f < std::numeric_limits<float>::epsilon());
+	assert(myVar2[2] - 30.0f < std::numeric_limits<float>::epsilon());
+
+	myVar2.VarBase::valueString("1,2,3"sv);
+	assert(myVar2[0] - 1.0f < std::numeric_limits<float>::epsilon());
+	assert(myVar2[1] - 2.0f < std::numeric_limits<float>::epsilon());
+	assert(myVar2[2] - 3.0f < std::numeric_limits<float>::epsilon());
+}
+
 int main(int argc, char* argv[]) {
 	basicBoolTest();
 	immutableTest();
@@ -393,6 +415,7 @@ int main(int argc, char* argv[]) {
 	registeredVarTest();
 	deductionTest();
 	multiValueParsing();
+	settingVariableTest();
 
 	return 0;
 }
