@@ -324,6 +324,31 @@ void deductionTest() {
 	static_assert(std::is_same_v<decltype(myVarArray2), ccli::Var<long, 3>>, "Could not deduce ccli::Var<long, 3>");
 }
 
+void multiValueParsing() {
+	try {
+		ccli::Var<float, 9> myVar1{ "float"sv, ""sv };
+		ccli::Var<bool> myVar2{ "b"sv, ""sv };
+		ccli::Var<int, 4> myVar3{ "int"sv, ""sv };
+		const char* argv[] = { "-float", "1,2,3", "4,5,6", "7,8,9", "-b", "-int", "1,2", "3,4"};
+		ccli::parseArgs(std::size(argv), argv);
+
+		float x = 1.0;
+		for (auto f : myVar1.value()) {
+			assert(f == x++);
+		}
+
+		assert(myVar2.value() == true);
+
+		int z = 1;
+		for (auto i : myVar3.value()) {
+			assert(i == z++);
+		}
+	}
+	catch (...) {
+		assert(false);
+	}
+}
+
 int main(int argc, char* argv[]) {
 	basicBoolTest();
 	immutableTest();
@@ -334,6 +359,7 @@ int main(int argc, char* argv[]) {
 	configTest2();
 	registeredVarTest();
 	deductionTest();
+	multiValueParsing();
 
 	return 0;
 }

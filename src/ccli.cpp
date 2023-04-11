@@ -183,6 +183,7 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 	}
 
 	VarBase* var = nullptr;
+	size_t idxOffset = 0;
 	for (; i < argc; i++)
 	{
 		std::string_view arg{ argv[i] };
@@ -191,11 +192,14 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 		if (shortName || longName)
 		{
 			// arg without value (cleared otherwise)
-			if (var && var->isBool() && var->size() == 1) var->setValueStringInternal("");
+			if (var && var->isBool() && var->size() == 1 && idxOffset == 0) var->setValueStringInternal("");
 
 			// find new arg
+			var = nullptr;
+			idxOffset = 0;
 			if (longName) var = findVarByLongName(arg.substr(2));
 			else if (shortName) var = findVarByShortName(arg.substr(1));
+			
 			// error if not found
 			if (var == nullptr) {
 				throw ccli::UnknownVarNameError{ std::string{ arg } };
@@ -204,13 +208,12 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 		// Var found
 		else if (var)
 		{
-			var->setValueStringInternal(arg);
-			var = nullptr;
+			idxOffset= var->setValueStringInternal(arg, idxOffset);
 		}
 	}
 	
 	// Var is last argument
-	if (var && var->isBool() && var->size() == 1) var->setValueStringInternal("");
+	if (var && var->isBool() && var->size() == 1 && idxOffset == 0) var->setValueStringInternal("");
 }
 
 ccli::ConfigCache ccli::loadConfig(const std::string& cfgFile)
@@ -338,6 +341,12 @@ const std::string& ccli::VarBase::description() const noexcept
 	return _description;
 }
 
+void ccli::VarBase::valueString(std::string_view string)
+{
+	if (isReadOnly() || isCliOnly() || isLocked()) return;
+	setValueStringInternal(string);
+}
+
 bool ccli::VarBase::hasCallback() const noexcept
 {
 	return _hasCallback;
@@ -387,6 +396,29 @@ void ccli::VarBase::locked(const bool locked) noexcept
 {
 	if (locked) lock();
 	else unlock();
+}
+
+size_t ccli::VarBase::setValueStringInternal(std::string_view string, size_t offset)
+{
+	if (isReadOnly() || isLocked()) return offset;
+	// empty string only allowed for bool and string
+	if (string.empty()) {
+		if (!isBool() && !isString()) return offset;
+	}
+
+	auto maxSize = size();
+	CSVParser csv{ string, _delimiter };
+	do
+	{
+		if (csv.count()+ offset >= maxSize) break;
+
+		auto token = csv.next();
+		setValueStringInternalAtIndex(csv.count() + offset - 1, token);
+	} while (csv.hasNext());
+
+	applyLimitsAndDoCallback();
+
+	return csv.count() + offset;
 }
 
 template <typename T>
@@ -511,4 +543,29 @@ std::string_view ccli::ConversionError::message() const
 	}
 
 	return _message;
+}
+
+bool ccli::CSVParser::hasNext() const
+{
+	return _pos != std::string::npos;
+}
+
+std::string_view ccli::CSVParser::next()
+{
+		_pos = _data.find(_delimiter, _current);
+		_token = _data.substr(_current, _pos - _current);
+		_current = _pos + 1;
+		_count++;
+
+		return _token;
+}
+
+size_t ccli::CSVParser::count() const
+{
+	return _count;
+}
+
+std::string_view ccli::CSVParser::token()
+{
+	return _token;
 }
