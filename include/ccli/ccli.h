@@ -126,6 +126,11 @@ public:
 		[[nodiscard]] virtual std::optional<double> asFloat(size_t = 0) const = 0;
 		[[nodiscard]] virtual std::optional<std::string_view> asString(size_t = 0) const = 0;
 
+		virtual bool tryStore(bool, size_t = 0) = 0;
+		virtual bool tryStore(long long, size_t = 0) = 0;
+		virtual bool tryStore(double, size_t = 0) = 0;
+		virtual bool tryStore(std::string, size_t = 0) = 0;
+
 		void lock() noexcept;
 		void unlock() noexcept;
 		void locked(bool locked) noexcept;
@@ -295,32 +300,19 @@ public:
 		[[nodiscard]] bool isFloatingPoint() const override { return std::is_floating_point_v<TData>; }
 		[[nodiscard]] bool isString() const override { return std::is_same_v<TData, std::string>; }
 
-		[[nodiscard]] std::optional<bool> asBool(size_t idx = 0) const override
+		template<typename T>
+		[[nodiscard]] std::optional<T> asNumeric(size_t idx = 0) const
 		{
 			if constexpr (not std::is_same_v<TData, std::string>)
 			{
-				return { static_cast<bool>(_value.at(idx)) };
+				return { static_cast<T>(_value.at(idx)) };
 			}
 			return {};
 		}
 
-		[[nodiscard]] std::optional<long long> asInt(size_t idx = 0) const override
-		{
-			if constexpr (not std::is_same_v<TData, std::string>)
-			{
-				return { static_cast<long long>(_value.at(idx)) };
-			}
-			return {};
-		}
-
-		[[nodiscard]] std::optional<double> asFloat(size_t idx = 0) const override
-		{
-			if constexpr (not std::is_same_v<TData, std::string>)
-			{
-				return { static_cast<double>(_value.at(idx)) };
-			}
-			return {};
-		}
+		[[nodiscard]] std::optional<bool> asBool(size_t idx = 0) const override { return asNumeric<bool>( idx ); }
+		[[nodiscard]] std::optional<long long> asInt(size_t idx = 0) const override { return asNumeric<long long>(idx); }
+		[[nodiscard]] std::optional<double> asFloat(size_t idx = 0) const override { return asNumeric<double>(idx); }
 
 		[[nodiscard]] std::optional<std::string_view> asString(size_t idx = 0) const override
 		{
@@ -329,6 +321,30 @@ public:
 				return { std::string_view{ _value.at(idx) } };
 			}
 			return {};
+		}
+
+		template<typename T>
+		bool tryStoreNumeric(T val, size_t idx = 0) {
+			if constexpr (not std::is_same_v<TData, std::string>)
+			{
+				_value.at(idx) = static_cast<TData>(val);
+				return true;
+			}
+			return false;
+		}
+
+		virtual bool tryStore(bool val, size_t idx = 0) override { return tryStoreNumeric<bool>(val, idx); }
+		virtual bool tryStore(long long val, size_t idx = 0) override { return tryStoreNumeric<long long>(val, idx); }
+		virtual bool tryStore(double val, size_t idx = 0) override { return tryStoreNumeric<double>(val, idx); }
+
+		virtual bool tryStore(std::string val, size_t idx = 0) override
+		{
+			if constexpr (std::is_same_v<TData, std::string>)
+			{
+				_value.at(idx) = std::move(val);
+				return true;
+			}
+			return false;
 		}
 
 	private:

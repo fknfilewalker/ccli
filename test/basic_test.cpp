@@ -439,6 +439,32 @@ void settingVariableTest() {
 	assert(myVar2[2] - 3.0f < std::numeric_limits<float>::epsilon());
 }
 
+void tryStoreTest() {
+	ccli::Var<float> myVar1{ "float1"sv, ""sv, 1.0f };
+	ccli::Var<std::string> myVar2{ "string1"sv, ""sv, "someValue"};
+
+	{
+		assert(myVar1.tryStoreNumeric<float>(2.0f));
+		assert(2.0f - myVar1 < std::numeric_limits<float>::epsilon());
+
+		ccli::VarBase& var = myVar1;
+		assert(var.tryStore(3.0f));
+		assert(3.0f - myVar1 < std::numeric_limits<float>::epsilon());
+
+		assert(!var.tryStore(std::string{ "hello world" }));
+	}
+
+	{
+		assert(!myVar2.tryStoreNumeric<float>(2.0f));
+
+		ccli::VarBase& var = myVar2;
+		assert(!var.tryStore(3.0f));
+
+		assert(var.tryStore(std::string{ "hello world" }));
+		assert(myVar2.value() == "hello world");
+	}
+}
+
 int main(int argc, char* argv[]) {
 	basicBoolTest();
 	immutableTest();
@@ -451,6 +477,7 @@ int main(int argc, char* argv[]) {
 	deductionTest();
 	multiValueParsing();
 	settingVariableTest();
+	tryStoreTest();
 
 	return 0;
 }
