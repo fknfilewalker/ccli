@@ -333,11 +333,11 @@ public:
 			return false;
 		}
 
-		virtual bool tryStore(bool val, size_t idx = 0) override { return tryStoreNumeric<bool>(val, idx); }
-		virtual bool tryStore(long long val, size_t idx = 0) override { return tryStoreNumeric<long long>(val, idx); }
-		virtual bool tryStore(double val, size_t idx = 0) override { return tryStoreNumeric<double>(val, idx); }
+		bool tryStore(bool val, size_t idx = 0) override { return tryStoreNumeric<bool>(val, idx); }
+		bool tryStore(long long val, size_t idx = 0) override { return tryStoreNumeric<long long>(val, idx); }
+		bool tryStore(double val, size_t idx = 0) override { return tryStoreNumeric<double>(val, idx); }
 
-		virtual bool tryStore(std::string val, size_t idx = 0) override
+		bool tryStore(std::string val, size_t idx = 0) override
 		{
 			if constexpr (std::is_same_v<TData, std::string>)
 			{
