@@ -38,26 +38,32 @@ namespace
 
 	constexpr char configDelimiter = '=';
 	using MapType = std::map<std::string, ccli::VarBase*, std::less<>>;
+	using VecType = std::vector<ccli::VarBase*>;
 
 	/*
 	** vars
 	*/
 	// contains static lists keeping track of all vars
-	std::map<std::string, ccli::VarBase*, std::less<>>& getLongNameVarMap()
+	MapType& getLongNameVarMap()
 	{
 		static MapType map;
 		return map;
 	}
 
-	std::map<std::string, ccli::VarBase*, std::less<>>& getShortNameVarMap()
+	MapType& getShortNameVarMap()
 	{
 		static MapType map;
+		return map;
+	}
+
+	VecType& getVarList() {
+		static VecType map;
 		return map;
 	}
 
 	ccli::VarBase* findVarByLongName(const std::string_view longName)
 	{
-		std::map<std::string, ccli::VarBase*, std::less<>>& map = getLongNameVarMap();
+		MapType& map = getLongNameVarMap();
 		const auto it = map.find(longName);
 		if (it != map.end()) return it->second;
 		return nullptr;
@@ -96,6 +102,8 @@ namespace
 			assert(!(pairLong.has_value() && pairLong->second));
 			throw ccli::DuplicatedVarNameError{ (pairShort.has_value() && !pairShort->second) ? shortName : longName };
 		}
+
+		getVarList().push_back(aVar);
 	}
 
 	void removeFromVarList(const std::string_view longName, const std::string_view shortName,
@@ -103,6 +111,7 @@ namespace
 	{
 		auto& mapLong = getLongNameVarMap();
 		auto& mapShort = getShortNameVarMap();
+		auto& varList = getVarList();
 
 		if (!longName.empty())
 		{
@@ -113,6 +122,11 @@ namespace
 		{
 			const auto it = mapShort.find(shortName);
 			if (it != mapShort.end() && it->second == aVar) mapShort.erase(it);
+		}
+
+		auto it = std::find(varList.begin(), varList.end(), aVar);
+		if (it != varList.end()) {
+			varList.erase(it);
 		}
 	}
 
@@ -339,10 +353,10 @@ void ccli::executeCallbacks()
 ccli::IterationDecision ccli::forEachVar(const std::function<IterationDecision(VarBase&, size_t)>& callback)
 {
 	size_t idx = 0;
-	const auto& map = getShortNameVarMap();
-	for (auto& pair : map)
+	const auto& varList = getVarList();
+	for (auto* varPtr : varList)
 	{
-		auto result = callback(*pair.second, idx++);
+		auto result = callback(*varPtr, idx++);
 		if (result == IterationDecision::Break)
 		{
 			return result;
