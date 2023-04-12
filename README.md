@@ -191,7 +191,21 @@ v.valueString();    // -> "10,20,30,40"
 ```
 
 ## Variable registry
-Variables are automatically added to a global registery upon creation. If a variable with the same name already exists a `DuplicatedVarNameError` is thrown. If a variable goes out of scope, it is removed from the registry. All currently registerd variables can be iterated over using `forEachVar`.
+Variables are automatically added to a global registery upon creation. If a variable with the same name already exists a `DuplicatedVarNameError` is thrown. If a variable goes out of scope, it is removed from the registry.
+
+### Argument parsing
+When parsing CLI arguments from a `argc`-`argv` array all currently registered variables are considered to be CLI options. Bool variables do not require a value for the option: Any mentioned bool option is set to `true`. Numeric and string variables require a value, else a `ccli::MissingValueError` is thrown.
+```c++
+try {
+  ccli::parseArgs(argc, argv);
+}
+catch (ccli::CCLIError& e) {
+  std::cout << "Caught error: " << e.message() << std::endl;
+}
+```
+
+### Iterating
+All currently registerd variables can be iterated over using `forEachVar`.
 
 ```c++
 // Print all registered variables
@@ -214,4 +228,16 @@ auto result= ccli::forEachVar([](ccli::VarBase& var, const size_t idx) -> ccli::
 
 bool hasFalseVar= result == ccli::IterationDecision::Break;
 ```
+## Errors
 
+- `ccli::CCLIError` Base class for all errors thrown by CCLI.
+
+- `ccli::DuplicatedVarNameError` Thrown if two variables with either the same short- or long name are registered.
+
+- `ccli::FileError` Thrown if a config file could not be opened for writing.
+
+- `ccli::UnknownVarNameError` Thrown if a CLI option references an unknown variable name during parsing.
+
+- `ccli::MissingValueError` Thrown if a non-bool CLI option is missing a value during parsing.
+
+- `ccli::ConversionError` Thrown if a value string cannot be converted to the variables type.
