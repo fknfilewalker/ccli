@@ -258,8 +258,8 @@ void exceptionTest() {
 			assert(false);
 		}
 
-		assert(floatVar.value()[0] == 123);
-		assert(floatVar.value()[1] == 234);
+		assert(std::abs(floatVar.value()[0] - 123.0f) < std::numeric_limits<float>::epsilon());
+		assert(std::abs(floatVar.value()[1] - 234.0f) < std::numeric_limits<float>::epsilon());
 	}
 
 	{
@@ -421,22 +421,22 @@ void settingVariableTest() {
 	ccli::Var<float> myVar1{ "float1"sv, ""sv, 1.0f };
 
 	myVar1.value(22.0f);
-	assert(myVar1 - 22.0f < std::numeric_limits<float>::epsilon());
+	assert(std::abs(myVar1 - 22.0f) < std::numeric_limits<float>::epsilon());
 
 	ccli::Var<float, 3> myVar2{ "float2"sv, ""sv, {1.0f, 2.0f, 3.0f} };
 
 	myVar1.VarBase::valueString("123");
-	assert(myVar1 - 123.0f < std::numeric_limits<float>::epsilon());
+	assert(std::abs(myVar1 - 123.0f) < std::numeric_limits<float>::epsilon());
 
 	myVar2.value({ 10.0f, 20.0f, 30.0f});
-	assert(myVar2[0] - 10.0f < std::numeric_limits<float>::epsilon());
-	assert(myVar2[1] - 20.0f < std::numeric_limits<float>::epsilon());
-	assert(myVar2[2] - 30.0f < std::numeric_limits<float>::epsilon());
+	assert(std::abs(myVar2[0] - 10.0f) < std::numeric_limits<float>::epsilon());
+	assert(std::abs(myVar2[1] - 20.0f) < std::numeric_limits<float>::epsilon());
+	assert(std::abs(myVar2[2] - 30.0f) < std::numeric_limits<float>::epsilon());
 
 	myVar2.VarBase::valueString("1,2,3"sv);
-	assert(myVar2[0] - 1.0f < std::numeric_limits<float>::epsilon());
-	assert(myVar2[1] - 2.0f < std::numeric_limits<float>::epsilon());
-	assert(myVar2[2] - 3.0f < std::numeric_limits<float>::epsilon());
+	assert(std::abs(myVar2[0] - 1.0f) < std::numeric_limits<float>::epsilon());
+	assert(std::abs(myVar2[1] - 2.0f) < std::numeric_limits<float>::epsilon());
+	assert(std::abs(myVar2[2] - 3.0f) < std::numeric_limits<float>::epsilon());
 }
 
 void tryStoreTest() {
@@ -448,7 +448,7 @@ void tryStoreTest() {
 		assert(2.0f - myVar1 < std::numeric_limits<float>::epsilon());
 
 		ccli::VarBase& var = myVar1;
-		assert(var.tryStore(3.0f));
+		assert(var.tryStore(3.0));
 		assert(3.0f - myVar1 < std::numeric_limits<float>::epsilon());
 
 		assert(!var.tryStore(std::string{ "hello world" }));
@@ -458,7 +458,7 @@ void tryStoreTest() {
 		assert(!myVar2.tryStoreNumeric<float>(2.0f));
 
 		ccli::VarBase& var = myVar2;
-		assert(!var.tryStore(3.0f));
+		assert(!var.tryStore(3.0));
 
 		assert(var.tryStore(std::string{ "hello world" }));
 		assert(myVar2.value() == "hello world");

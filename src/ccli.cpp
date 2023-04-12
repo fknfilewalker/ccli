@@ -124,7 +124,7 @@ namespace
 			if (it != mapShort.end() && it->second == aVar) mapShort.erase(it);
 		}
 
-		auto it = std::find(varList.begin(), varList.end(), aVar);
+		const auto it = std::find(varList.begin(), varList.end(), aVar);
 		if (it != varList.end()) {
 			varList.erase(it);
 		}
@@ -186,7 +186,7 @@ namespace
 template<typename ...TErrors>
 class DeferredError {
 public:
-	bool hasError() const { return !std::holds_alternative<std::monostate>(_storage); }
+	[[nodiscard]] bool hasError() const { return !std::holds_alternative<std::monostate>(_storage); }
 
 	template<typename T, typename ...Args>
 	void defer(Args&&... args) {

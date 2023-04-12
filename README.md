@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
 ```c++
 #include <ccli/ccli.h>
 
-ccli::Var<bool> boolVar{"b"sv, "boolVar"sv, false, ccli::ConfigRead, };
+ccli::Var<bool> boolVar{"b"sv, "boolVar"sv, false, ccli::ConfigRead};
 
 int main() {
   try {

@@ -41,7 +41,7 @@ class ccli
 		[[nodiscard]] bool hasNext() const;
 		std::string_view next();
 		[[nodiscard]] size_t count() const;
-		std::string_view token() const;
+		[[nodiscard]] std::string_view token() const;
 
 	private:
 		char _delimiter;
@@ -194,7 +194,6 @@ public:
 	template <class T, class... U>
 	explicit Storage(T, U...) -> Storage<T, 1 + sizeof...(U)>;
 
-
 	template <auto Value>
 	struct MaxLimit
 	{
@@ -293,10 +292,10 @@ public:
 		}
 
 		[[nodiscard]] size_t size() const noexcept override { return _value.size(); }
-		[[nodiscard]] bool isCallbackCharged() const { return _callbackCharged; }
+		[[nodiscard]] bool isCallbackCharged() const noexcept { return _callbackCharged; }
 
 		[[nodiscard]] bool isBool() const override { return std::is_same_v<TData, bool>; }
-		[[nodiscard]] bool isIntegral() const override { return std::is_integral_v<TData>; }
+		[[nodiscard]] bool isIntegral() const override { return not isBool() && std::is_integral_v<TData>; }
 		[[nodiscard]] bool isFloatingPoint() const override { return std::is_floating_point_v<TData>; }
 		[[nodiscard]] bool isString() const override { return std::is_same_v<TData, std::string>; }
 
@@ -310,9 +309,9 @@ public:
 			return {};
 		}
 
-		[[nodiscard]] std::optional<bool> asBool(size_t idx = 0) const override { return asNumeric<bool>( idx ); }
-		[[nodiscard]] std::optional<long long> asInt(size_t idx = 0) const override { return asNumeric<long long>(idx); }
-		[[nodiscard]] std::optional<double> asFloat(size_t idx = 0) const override { return asNumeric<double>(idx); }
+		[[nodiscard]] std::optional<bool> asBool(const size_t idx = 0) const override { return asNumeric<bool>( idx ); }
+		[[nodiscard]] std::optional<long long> asInt(const size_t idx = 0) const override { return asNumeric<long long>(idx); }
+		[[nodiscard]] std::optional<double> asFloat(const size_t idx = 0) const override { return asNumeric<double>(idx); }
 
 		[[nodiscard]] std::optional<std::string_view> asString(size_t idx = 0) const override
 		{
@@ -333,9 +332,9 @@ public:
 			return false;
 		}
 
-		bool tryStore(bool val, size_t idx = 0) override { return tryStoreNumeric<bool>(val, idx); }
-		bool tryStore(long long val, size_t idx = 0) override { return tryStoreNumeric<long long>(val, idx); }
-		bool tryStore(double val, size_t idx = 0) override { return tryStoreNumeric<double>(val, idx); }
+		bool tryStore(const bool val, const size_t idx = 0) override { return tryStoreNumeric<bool>(val, idx); }
+		bool tryStore(const long long val, const size_t idx = 0) override { return tryStoreNumeric<long long>(val, idx); }
+		bool tryStore(const double val, const size_t idx = 0) override { return tryStoreNumeric<double>(val, idx); }
 
 		bool tryStore(std::string val, size_t idx = 0) override
 		{
