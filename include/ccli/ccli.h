@@ -400,6 +400,13 @@ public:
 		std::string_view unknownName() const { return _arg; }
 	};
 
+	class MissingValueError final : public CCLIError {
+	public:
+		MissingValueError(std::string name);
+		std::string_view message() const override;
+		std::string_view variable() const { return _arg; }
+	};
+
 	class ConversionError final : public CCLIError {
 	public:
 		ConversionError(const VarBase&, std::string name);

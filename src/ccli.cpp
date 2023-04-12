@@ -30,6 +30,7 @@ SOFTWARE.
 #include <fstream>
 #include <filesystem>
 #include <charconv>
+#include <variant>
 
 namespace
 {
@@ -168,6 +169,37 @@ namespace
 	}
 }
 
+template<typename ...TErrors>
+class DeferredError {
+public:
+	bool hasError() const { return !std::holds_alternative<std::monostate>(_storage); }
+
+	template<typename T, typename ...Args>
+	void defer(Args&&... args) {
+		if (!hasError()) {
+			_storage = T{ std::forward<Args>(args)... };
+		}
+	}
+
+	void throwError() {
+		throwErrorImpl<TErrors...>();
+	}
+
+private:
+	template<typename T, typename ...TRest>
+	void throwErrorImpl() {
+		if (std::holds_alternative<T>(_storage)) {
+			throw std::get<T>(_storage);
+		}
+
+		if constexpr (sizeof...(TRest) > 0) {
+			throwErrorImpl<TRest...>();
+		}
+	}
+
+	std::variant<TErrors..., std::monostate> _storage{ std::monostate{} };
+};
+
 void ccli::parseArgs(const size_t argc, const char* const argv[])
 {
 	size_t i = 0;
@@ -181,19 +213,31 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 		}
 	}
 
-	std::optional<ccli::UnknownVarNameError> errorToThrow;
+	DeferredError<ccli::UnknownVarNameError, ccli::MissingValueError> deferredError;
 
+	std::string_view arg;
 	VarBase* var = nullptr;
 	size_t idxOffset = 0;
+	auto valuelessVar = [&]() {
+		// Arg without value is only allowed for bools
+		if (var && idxOffset == 0) {
+			if (var->isBool() && var->size() == 1) {
+				var->setValueStringInternal("");
+				return;
+			}
+
+			deferredError.defer<ccli::MissingValueError>(std::string{ arg });
+		}
+	};
+
 	for (; i < argc; i++)
 	{
-		std::string_view arg{ argv[i] };
+		arg= argv[i];
 		const bool shortName = arg.size() >= 2 ? arg[0] == '-' && isalpha(arg[1]) : false;
 		const bool longName = arg.size() >= 2 ? arg[0] == '-' && arg[1] == '-' : false;
 		if (shortName || longName)
 		{
-			// arg without value (cleared otherwise)
-			if (var && var->isBool() && var->size() == 1 && idxOffset == 0) var->setValueStringInternal("");
+			valuelessVar();
 
 			// find new arg
 			var = nullptr;
@@ -202,8 +246,8 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 			else if (shortName) var = findVarByShortName(arg.substr(1));
 			
 			// error if not found -> throw the error after parsing the rest of the arguments
-			if (var == nullptr && !errorToThrow.has_value()) {
-				errorToThrow.emplace( std::string{ arg } );
+			if (var == nullptr) {
+				deferredError.defer<ccli::UnknownVarNameError>(std::string{ arg });
 			}
 		}
 		// Var found
@@ -214,12 +258,10 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 	}
 	
 	// Var is last argument
-	if (var && var->isBool() && var->size() == 1 && idxOffset == 0) var->setValueStringInternal("");
+	valuelessVar();
 
 	// Finally throw any potential error
-	if (errorToThrow.has_value()) {
-		throw* errorToThrow;
-	}
+	deferredError.throwError();
 }
 
 ccli::ConfigCache ccli::loadConfig(const std::string& cfgFile)
@@ -406,10 +448,10 @@ void ccli::VarBase::locked(const bool locked) noexcept
 
 size_t ccli::VarBase::setValueStringInternal(const std::string_view string, const size_t offset)
 {
-	if (isReadOnly() || isLocked()) return offset;
+	if (isReadOnly() || isLocked()) return offset+ 1;
 	// empty string only allowed for bool and string
 	if (string.empty()) {
-		if (!isBool() && !isString()) return offset;
+		if (!isBool() && !isString()) return offset+ 1;
 	}
 
 	const auto maxSize = size();
@@ -534,6 +576,18 @@ std::string_view ccli::UnknownVarNameError::message() const
 {
 	if (_message.empty()) {
 		_message = buildString("Unknown variable name '"sv, _arg, "' while parsing arguments."sv);
+	}
+
+	return _message;
+}
+
+ccli::MissingValueError::MissingValueError(std::string name)
+	: CCLIError{ {}, std::move(name) } {}
+
+std::string_view ccli::MissingValueError::message() const
+{
+	if (_message.empty()) {
+		_message = buildString("Variable '"sv, _arg, "' requires value when parsing arguments. (Only boolean variables are allowed as valueless switches.)"sv);
 	}
 
 	return _message;

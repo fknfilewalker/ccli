@@ -210,6 +210,41 @@ void exceptionTest() {
 	}
 
 	{
+		// Numerics require a value
+		bool didCatch = false;
+		try {
+			ccli::Var<float, 1> floatVar("float", "", 0.0);
+			const char* argv[] = { "-float" };
+			ccli::parseArgs(std::size(argv), argv);
+		}
+		catch (const ccli::MissingValueError& e) {
+			didCatch = true;
+			assert(e.variable() == "-float"sv);
+			assert(e.what() && strlen(e.what()));
+			assert(not e.message().empty());
+		}
+		catch (...) {
+			assert(false);
+		}
+
+		assert(didCatch);
+	}
+
+	{
+		// Bools do not require a value
+		ccli::Var<bool> boolVar("bool", "", false);
+		try {
+			const char* argv[] = { "-bool" };
+			ccli::parseArgs(std::size(argv), argv);
+		}
+		catch (...) {
+			assert(false);
+		}
+
+		assert(boolVar == true);
+	}
+
+	{
 		// Check that parsing errors are deferred
 		const char* argv[] = { "-aBadVariableNameWhichDoesNotExist", "someValue", "-anotherBadVariableName", "-goodVarName", "123", "234"};
 		ccli::Var<float, 2> floatVar("goodVarName", "", { 0.0f, 0.0f } );
