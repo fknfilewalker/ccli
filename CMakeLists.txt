@@ -20,7 +20,7 @@ cmake_minimum_required(VERSION 3.14.0)
 option(CCLI_BUILD_TESTS "Build Tests" ON)
 
 # PROJECT
-set(CMAKE_GENERATOR_TOOLSET "ClangCL")
+#set(CMAKE_GENERATOR_TOOLSET "ClangCL")
 project(ccli)
 set(CCLI ccli)
 
