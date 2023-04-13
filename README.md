@@ -48,8 +48,8 @@ ccli::Var<bool> boolVar2{"b2"sv, "boolVar2"sv, false, ccli::ConfigRdwr};
 
 int main() {
   try {
-    ccli::ConfigCache configCache = ccli::loadConfig("filename.cfg");
-    ccli::writeConfig("filename.cfg", configCache);
+    ccli::ConfigCache configCache = ccli::loadConfig("filename.ini");
+    ccli::writeConfig("filename.ini", configCache);
   }
   catch (ccli::CCLIError& e) {
     std::cout << "Caught error: " << e.message() << std::endl;
