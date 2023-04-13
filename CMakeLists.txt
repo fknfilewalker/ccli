@@ -49,7 +49,7 @@ target_include_directories(${CCLI} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 if(CCLI_BUILD_TESTS)
 	# exe
 	set(TEST_NAME "basic_test")
-	add_executable(${TEST_NAME} WIN32 "test/basic_test.cpp")
+    add_executable(${TEST_NAME} "test/basic_test.cpp")
 	set_target_properties(${TEST_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")   
 	set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${TEST_NAME}) 
 

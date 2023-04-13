@@ -287,7 +287,7 @@ void configTest()
 	ccli::Var<uint32_t, 2> uint2Var(""sv, "uint2"sv, { 100, 200 }, ccli::ConfigRdwr);
 	ccli::Var<std::string> stringVar(""sv, "string"sv, { "This is a string" }, ccli::ConfigRdwr);
 
-	static constexpr auto filename = "test/configTest.ini";
+    static constexpr auto filename = "configTest.ini";
 	try {
 		ccli::writeConfig(filename);
 		uint2Var.value({ 1, 1 });
@@ -315,7 +315,7 @@ void configTest2()
 	assert(uintVar.value() == 100);
 	assert(stringVar.value() == "This is a string");
 
-	static constexpr auto filename = "test/configTest2.ini";
+    static constexpr auto filename = "configTest2.ini";
 	{
 		std::ofstream cfgfile;
 		cfgfile.open(filename);
