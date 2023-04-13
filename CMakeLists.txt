@@ -17,26 +17,21 @@ endif()
 cmake_minimum_required(VERSION 3.14.0)
 
 # VARS
-set(EXTERNAL_DIR "external")
-set(TEST_DIR "test")
-option(BUILD_TESTS "Build Tests" ON)
-
-# COMPILER
-# set(CMAKE_GENERATOR_TOOLSET "ClangCL")
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_EXTENSIONS OFF)
-if(WIN32)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /MP /Qpar")
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:CONSOLE")
-elseif(APPLE)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wwrite-strings -x objective-c++")
-elseif(UNIX)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wwrite-strings")
-endif()
+option(CCLI_BUILD_TESTS "Build Tests" ON)
 
 # PROJECT
+set(CMAKE_GENERATOR_TOOLSET "ClangCL")
 project(ccli)
 set(CCLI ccli)
+
+# COMPILER
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_EXTENSIONS OFF)
+if (MSVC)
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:CONSOLE")
+elseif(APPLE)
+elseif(UNIX)
+endif()
 
 # SOURCES
 file(GLOB SOURCES "src/ccli.cpp")
@@ -51,7 +46,7 @@ add_library(${CCLI} STATIC ${SOURCES} ${HEADERS})
 add_library(${CCLI}::${CCLI} ALIAS ${CCLI})
 target_include_directories(${CCLI} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
-if(BUILD_TESTS)
+if(CCLI_BUILD_TESTS)
 	# exe
 	set(TEST_NAME "basic_test")
 	add_executable(${TEST_NAME} WIN32 "test/basic_test.cpp")
