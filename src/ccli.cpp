@@ -436,7 +436,7 @@ bool ccli::VarBase::isConfigRead() const noexcept
 
 bool ccli::VarBase::isConfigReadWrite() const noexcept
 {
-	return !_longName.empty() && ((_flags & ConfigRDWR) == ConfigRDWR);
+	return !_longName.empty() && ((_flags & ConfigRdwr) == ConfigRdwr);
 }
 
 bool ccli::VarBase::isCallbackAutoExecuted() const noexcept

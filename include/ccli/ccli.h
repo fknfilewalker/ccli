@@ -81,7 +81,7 @@ public:
 		CliOnly		= (1 << 1),	// can only be set through parseArgs
 		Locked		= (1 << 2),	// this var is locked, cannot be modified until unlocked
 		ConfigRead	= (1 << 3),	// load variable from config file
-		ConfigRDWR	= (3 << 3),	// load variable from config file and save changes back to config file
+		ConfigRdwr	= (3 << 3),	// load variable from config file and save changes back to config file
 		ManualExec	= (1 << 5)	// execute callback only when executeCallback/executeCallbacks is called
 	};
 

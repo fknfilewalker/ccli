@@ -284,8 +284,8 @@ void exceptionTest() {
 
 void configTest()
 {
-	ccli::Var<uint32_t, 2> uint2Var(""sv, "uint2"sv, { 100, 200 }, ccli::ConfigRDWR);
-	ccli::Var<std::string> stringVar(""sv, "string"sv, { "This is a string" }, ccli::ConfigRDWR);
+	ccli::Var<uint32_t, 2> uint2Var(""sv, "uint2"sv, { 100, 200 }, ccli::ConfigRdwr);
+	ccli::Var<std::string> stringVar(""sv, "string"sv, { "This is a string" }, ccli::ConfigRdwr);
 
 	static constexpr auto filename = "test/configTest.cfg";
 	try {
@@ -310,7 +310,7 @@ void configTest()
 void configTest2()
 {
 	ccli::Var<uint32_t> uintVar(""sv, "uint"sv, 100, ccli::ConfigRead);
-	ccli::Var<std::string> stringVar(""sv, "string"sv, { "This is a string" }, ccli::ConfigRDWR);
+	ccli::Var<std::string> stringVar(""sv, "string"sv, { "This is a string" }, ccli::ConfigRdwr);
 
 	assert(uintVar.value() == 100);
 	assert(stringVar.value() == "This is a string");
@@ -353,7 +353,7 @@ void registeredVarTest()
 {
 	ccli::Var<float, 4, ccli::MaxLimit<1>, ccli::MinLimit<-1>> float4Var("f1", "float1", { 0 }, ccli::None, "First bool Var");
 	ccli::Var<float, 4> float4Var2("f2", "float2", { 0.0f }, ccli::None, "First bool Var");
-	ccli::Var<float, 2> float2Var{"t"sv, "test"sv, { 100.0f, 200.0f }, ccli::ConfigRDWR };
+	ccli::Var<float, 2> float2Var{"t"sv, "test"sv, { 100.0f, 200.0f }, ccli::ConfigRdwr };
 	ccli::Var<short, 1, ccli::MaxLimit<500>> shortVar("s", "short", 0);
 	ccli::Var<bool> boolVar("b", "bool1", false);
 

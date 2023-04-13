@@ -39,15 +39,17 @@ int main(int argc, char* argv[]) {
 }
 ```
 
-### Load vars from config file
+### Load vars from config file and write changes back to it
 ```c++
 #include <ccli/ccli.h>
 
 ccli::Var<bool> boolVar{"b"sv, "boolVar"sv, false, ccli::ConfigRead};
+ccli::Var<bool> boolVar2{"b2"sv, "boolVar2"sv, false, ccli::ConfigRdwr};
 
 int main() {
   try {
-    ccli::loadConfig("filename.ini");
+    ccli::ConfigCache configCache = ccli::loadConfig("filename.cfg");
+    ccli::writeConfig("filename.cfg", configCache);
   }
   catch (ccli::CCLIError& e) {
     std::cout << "Caught error: " << e.message() << std::endl;
