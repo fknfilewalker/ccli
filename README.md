@@ -7,7 +7,6 @@ A static command line argument parsing library written in c++20
 ### Basic
 ```c++
 #include <ccli/ccli.h>
-// optional
 #include <iostream>
 
 ccli::Var boolV {"b", "bool", false, ccli::CliOnly};  // bool, set with -b or --bool
