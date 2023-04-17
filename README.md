@@ -1,4 +1,4 @@
-# ccli
+# ccli - cool command line interface
 
 A static command line argument parsing library written in c++20
 
