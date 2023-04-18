@@ -104,6 +104,7 @@ public:
 		virtual std::string valueString() = 0;
 		void valueString(std::string_view string);
 
+		virtual void chargeCallback() noexcept = 0;
 		[[nodiscard]] bool hasCallback() const noexcept;
 		virtual bool executeCallback() = 0;
 
@@ -279,7 +280,7 @@ public:
 			return stream.str();
 		}
 
-		void chargeCallback() noexcept { _callbackCharged = true; }
+		void chargeCallback() noexcept override { if(hasCallback()) _callbackCharged = true; }
 		bool executeCallback() override
 		{
 			if (hasCallback() && _callbackCharged)
