@@ -388,6 +388,7 @@ public:
 		CCLIError(std::string m);
 		const char* what() const final { return message().data(); }
 		virtual std::string_view message() const { return _message; }
+		virtual void throwSelf() const= 0;
 	protected:
 		struct ArgType {};
 		CCLIError(ArgType, std::string a);
@@ -399,6 +400,7 @@ public:
 	public:
 		DuplicatedVarNameError(std::string name);
 		std::string_view message() const override;
+		void throwSelf() const override;
 		std::string_view duplicatedName() const { return _arg; }
 	};
 
@@ -406,6 +408,7 @@ public:
 	public:
 		FileError(std::string path);
 		std::string_view message() const override;
+		void throwSelf() const override;
 		std::string_view filePath() const { return _arg; }
 	};
 
@@ -413,6 +416,7 @@ public:
 	public:
 		UnknownVarNameError(std::string name);
 		std::string_view message() const override;
+		void throwSelf() const override;
 		std::string_view unknownName() const { return _arg; }
 	};
 
@@ -420,6 +424,7 @@ public:
 	public:
 		MissingValueError(std::string name);
 		std::string_view message() const override;
+		void throwSelf() const override;
 		std::string_view variable() const { return _arg; }
 	};
 
@@ -427,6 +432,7 @@ public:
 	public:
 		ConversionError(const VarBase&, std::string name);
 		std::string_view message() const override;
+		void throwSelf() const override;
 		std::string_view unconvertibleValueString() const { return _arg; }
 		const VarBase& variable() const { return _variable; }
 	private:

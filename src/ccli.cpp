@@ -183,37 +183,6 @@ namespace
 	}
 }
 
-template<typename ...TErrors>
-class DeferredError {
-public:
-	[[nodiscard]] bool hasError() const { return !std::holds_alternative<std::monostate>(_storage); }
-
-	template<typename T, typename ...Args>
-	void defer(Args&&... args) {
-		if (!hasError()) {
-			_storage = T{ std::forward<Args>(args)... };
-		}
-	}
-
-	void throwError() {
-		throwErrorImpl<TErrors...>();
-	}
-
-private:
-	template<typename T, typename ...TRest>
-	void throwErrorImpl() {
-		if (std::holds_alternative<T>(_storage)) {
-			throw std::get<T>(_storage);
-		}
-
-		if constexpr (sizeof...(TRest) > 0) {
-			throwErrorImpl<TRest...>();
-		}
-	}
-
-	std::variant<TErrors..., std::monostate> _storage{ std::monostate{} };
-};
-
 void ccli::parseArgs(const size_t argc, const char* const argv[])
 {
 	size_t i = 0;
@@ -227,7 +196,7 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 		}
 	}
 
-	DeferredError<ccli::UnknownVarNameError, ccli::MissingValueError> deferredError;
+	std::unique_ptr<CCLIError> deferredError;
 
 	std::string_view arg;
 	VarBase* var = nullptr;
@@ -240,7 +209,9 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 				return;
 			}
 
-			deferredError.defer<ccli::MissingValueError>(std::string{ arg });
+			if (!deferredError) {
+				deferredError = std::make_unique<ccli::MissingValueError>(std::string{ arg });
+			}
 		}
 	};
 
@@ -260,8 +231,8 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 			else if (shortName) var = findVarByShortName(arg.substr(1));
 			
 			// error if not found -> throw the error after parsing the rest of the arguments
-			if (var == nullptr) {
-				deferredError.defer<ccli::UnknownVarNameError>(std::string{ arg });
+			if (var == nullptr && !deferredError) {
+				deferredError= std::make_unique<ccli::UnknownVarNameError>(std::string{ arg });
 			}
 		}
 		// Var found
@@ -275,7 +246,9 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 	valuelessVar();
 
 	// Finally throw any potential error
-	deferredError.throwError();
+	if (deferredError) {
+		deferredError->throwSelf();
+	}
 }
 
 ccli::ConfigCache ccli::loadConfig(const std::string& cfgFile)
@@ -571,6 +544,11 @@ std::string_view ccli::DuplicatedVarNameError::message() const
 	return _message;
 }
 
+void ccli::DuplicatedVarNameError::throwSelf() const
+{
+	throw* this;
+}
+
 ccli::FileError::FileError(std::string path)
 	: CCLIError{ {}, std::move(path) } {}
 
@@ -581,6 +559,11 @@ std::string_view ccli::FileError::message() const
 	}
 
 	return _message;
+}
+
+void ccli::FileError::throwSelf() const
+{
+	throw* this;
 }
 
 ccli::UnknownVarNameError::UnknownVarNameError(std::string name)
@@ -595,6 +578,11 @@ std::string_view ccli::UnknownVarNameError::message() const
 	return _message;
 }
 
+void ccli::UnknownVarNameError::throwSelf() const
+{
+	throw* this;
+}
+
 ccli::MissingValueError::MissingValueError(std::string name)
 	: CCLIError{ {}, std::move(name) } {}
 
@@ -607,6 +595,11 @@ std::string_view ccli::MissingValueError::message() const
 	return _message;
 }
 
+void ccli::MissingValueError::throwSelf() const
+{
+	throw* this;
+}
+
 ccli::ConversionError::ConversionError(const VarBase& var, std::string name)
 	: CCLIError{ {}, std::move(name) }, _variable{ var } {}
 
@@ -617,6 +610,11 @@ std::string_view ccli::ConversionError::message() const
 	}
 
 	return _message;
+}
+
+void ccli::ConversionError::throwSelf() const
+{
+	throw* this;
 }
 
 bool ccli::CSVParser::hasNext() const
