@@ -272,12 +272,8 @@ ccli::ConfigCache ccli::loadConfig(const std::string& cfgFile)
 			auto value = line.substr(pos + 1, line.size());
 			VarBase* var = findVarByLongName(token);
 			// also check rd
-			if (var && var->isConfigRead())
-			{
-				var->valueString(value);
-				configMap.insert({ std::move(token), std::move(value) });
-			}
-			else configMap.insert({ std::move(token), std::move(value) });
+			if (var && (var->isConfigRead() || var->isConfigReadWrite())) var->valueString(value);
+			configMap.insert({ std::move(token), std::move(value) });
 		}
 	}
 	f.close();
