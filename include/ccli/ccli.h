@@ -440,17 +440,33 @@ public:
 	};
 
 	// Deduction guides
-	template<typename T, int S>
-	Var(std::string_view, std::string_view, const T(&)[S], uint32_t = 0, std::string_view = "") -> Var<T, S>;
-
-	template<typename T, int S, typename F>
+	// Size N
+	template<typename T, size_t S>
+	Var(std::string_view, std::string_view, const T(&)[S]) -> Var<T, S>;
+	template<typename T, size_t S>
+	Var(std::string_view, std::string_view, const T(&)[S], uint32_t) -> Var<T, S>;
+	template<typename T, size_t S>
+	Var(std::string_view, std::string_view, const T(&)[S], uint32_t, std::string_view) -> Var<T, S>;
+	// Size N with callback
+	template<typename T, size_t S, typename F>
 	Var(std::string_view, std::string_view, const T(&)[S], uint32_t, std::string_view, F) -> Var<T, S>;
 
+	// Size 1
 	template<typename T>
-	Var(std::string_view, std::string_view, T, uint32_t = 0, std::string_view = "") -> Var<T, 1>;
-
+	Var(std::string_view, std::string_view, T) -> Var<T, 1>;
+	template<typename T>
+	Var(std::string_view, std::string_view, T, uint32_t) -> Var<T, 1>;
+	template<typename T>
+	Var(std::string_view, std::string_view, T, uint32_t, std::string_view) -> Var<T, 1>;
+	// Size 1 with callback
 	template<typename T, typename F>
 	Var(std::string_view, std::string_view, T, uint32_t, std::string_view, F) -> Var<T, 1>;
 
-	Var(std::string_view, std::string_view, const char*, uint32_t = 0, std::string_view = "")->Var<std::string, 1>;
+	// Char
+	Var(std::string_view, std::string_view, const char*)->Var<std::string, 1>;
+	Var(std::string_view, std::string_view, const char*, uint32_t)->Var<std::string, 1>;
+	Var(std::string_view, std::string_view, const char*, uint32_t, std::string_view)->Var<std::string, 1>;
+	// Char with callback
+	template<typename F>
+	Var(std::string_view, std::string_view, const char*, uint32_t, std::string_view, F) -> Var<std::string, 1>;
 };
