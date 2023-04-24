@@ -192,9 +192,6 @@ public:
 		std::array<TData, 1> asArray() const noexcept { return { data }; }
 	};
 
-	template <class T, class... U>
-	explicit Storage(T, U...) -> Storage<T, 1 + sizeof...(U)>;
-
 	template <auto Value>
 	struct MaxLimit
 	{
@@ -440,33 +437,36 @@ public:
 	};
 
 	// Deduction guides
+	template <class T, class... U>
+	[[maybe_unused]] explicit Storage(T, U...)->Storage<T, 1 + sizeof...(U)>;
+
 	// Size N
 	template<typename T, size_t S>
-	Var(std::string_view, std::string_view, const T(&)[S]) -> Var<T, S>;
+	[[maybe_unused]] Var(std::string_view, std::string_view, const T(&)[S]) -> Var<T, S>;
 	template<typename T, size_t S>
-	Var(std::string_view, std::string_view, const T(&)[S], uint32_t) -> Var<T, S>;
+	[[maybe_unused]] Var(std::string_view, std::string_view, const T(&)[S], uint32_t) -> Var<T, S>;
 	template<typename T, size_t S>
-	Var(std::string_view, std::string_view, const T(&)[S], uint32_t, std::string_view) -> Var<T, S>;
+	[[maybe_unused]] Var(std::string_view, std::string_view, const T(&)[S], uint32_t, std::string_view) -> Var<T, S>;
 	// Size N with callback
 	template<typename T, size_t S, typename F>
-	Var(std::string_view, std::string_view, const T(&)[S], uint32_t, std::string_view, F) -> Var<T, S>;
+	[[maybe_unused]] Var(std::string_view, std::string_view, const T(&)[S], uint32_t, std::string_view, F) -> Var<T, S>;
 
 	// Size 1
 	template<typename T>
-	Var(std::string_view, std::string_view, T) -> Var<T, 1>;
+	[[maybe_unused]] Var(std::string_view, std::string_view, T) -> Var<T, 1>;
 	template<typename T>
-	Var(std::string_view, std::string_view, T, uint32_t) -> Var<T, 1>;
+	[[maybe_unused]] Var(std::string_view, std::string_view, T, uint32_t) -> Var<T, 1>;
 	template<typename T>
-	Var(std::string_view, std::string_view, T, uint32_t, std::string_view) -> Var<T, 1>;
+	[[maybe_unused]] Var(std::string_view, std::string_view, T, uint32_t, std::string_view) -> Var<T, 1>;
 	// Size 1 with callback
 	template<typename T, typename F>
-	Var(std::string_view, std::string_view, T, uint32_t, std::string_view, F) -> Var<T, 1>;
+	[[maybe_unused]] Var(std::string_view, std::string_view, T, uint32_t, std::string_view, F) -> Var<T, 1>;
 
 	// Char
-	Var(std::string_view, std::string_view, const char*)->Var<std::string, 1>;
-	Var(std::string_view, std::string_view, const char*, uint32_t)->Var<std::string, 1>;
-	Var(std::string_view, std::string_view, const char*, uint32_t, std::string_view)->Var<std::string, 1>;
+	[[maybe_unused]] Var(std::string_view, std::string_view, const char*)->Var<std::string, 1>;
+	[[maybe_unused]] Var(std::string_view, std::string_view, const char*, uint32_t)->Var<std::string, 1>;
+	[[maybe_unused]] Var(std::string_view, std::string_view, const char*, uint32_t, std::string_view)->Var<std::string, 1>;
 	// Char with callback
 	template<typename F>
-	Var(std::string_view, std::string_view, const char*, uint32_t, std::string_view, F) -> Var<std::string, 1>;
+	[[maybe_unused]] Var(std::string_view, std::string_view, const char*, uint32_t, std::string_view, F) -> Var<std::string, 1>;
 };
