@@ -322,16 +322,10 @@ void ccli::executeCallbacks()
 ccli::IterationDecision ccli::forEachVar(const std::function<IterationDecision(VarBase&, size_t)>& callback)
 {
 	size_t idx = 0;
-	const auto& varList = getVarList();
-	for (auto* varPtr : varList)
+	for (auto* varPtr : getVarList())
 	{
-		auto result = callback(*varPtr, idx++);
-		if (result == IterationDecision::Break)
-		{
-			return result;
-		}
+		if (IterationDecision::Break == callback(*varPtr, idx++)) return IterationDecision::Break;
 	}
-
 	return IterationDecision::Continue;
 }
 

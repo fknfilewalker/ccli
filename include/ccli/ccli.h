@@ -34,45 +34,20 @@ SOFTWARE.
 
 class ccli
 {
-	class CSVParser {
-	public:
-		CSVParser(const std::string_view d, const char del) : _delimiter{ del }, _data{ d } {}
-
-		[[nodiscard]] bool hasNext() const;
-		std::string_view next();
-		[[nodiscard]] size_t count() const;
-		[[nodiscard]] std::string_view token() const;
-
-	private:
-		char _delimiter;
-		size_t _count{ 0 };
-		size_t _current{ 0 };
-		size_t _pos{ 0 };
-		std::string_view _data;
-		std::string_view _token;
-	};
-
 public:
-	struct IterationDecision
-	{
-		enum DecisionType { Continue, Break };
-
-		IterationDecision() = default;
-		IterationDecision(const DecisionType d) : decision{ d } {}
-
-		bool operator==(const DecisionType d) const { return decision == d; }
-		const DecisionType decision{ Continue };
-	};
-
-	class VarBase;
+	// Parse
 	static void parseArgs(size_t argc, const char* const argv[]);
-
+	// Config
 	using ConfigCache = std::map<std::string, std::string>;
 	static ConfigCache loadConfig(const std::string& cfgFile);
 	static void writeConfig(const std::string& cfgFile, ConfigCache& cache);
 	static void writeConfig(const std::string& cfgFile);
+	// Callback
 	static void executeCallbacks();
-	static IterationDecision forEachVar(const std::function<IterationDecision(VarBase&, size_t)>&);
+	// For all vars
+	class VarBase;
+	enum class IterationDecision { Continue, Break };
+	static IterationDecision forEachVar(const std::function<IterationDecision(VarBase& var, size_t idx)>&);
 
 	enum Flag
 	{
@@ -382,7 +357,7 @@ public:
 
 	class CCLIError : public std::exception {
 	public:
-		CCLIError(std::string m);
+		explicit CCLIError(std::string m);
 		const char* what() const final { return message().data(); }
 		virtual std::string_view message() const { return _message; }
 		virtual void throwSelf() const= 0;
@@ -395,7 +370,7 @@ public:
 
 	class DuplicatedVarNameError final : public CCLIError {
 	public:
-		DuplicatedVarNameError(std::string name);
+		explicit DuplicatedVarNameError(std::string name);
 		std::string_view message() const override;
 		void throwSelf() const override;
 		std::string_view duplicatedName() const { return _arg; }
@@ -403,7 +378,7 @@ public:
 
 	class FileError final : public CCLIError {
 	public:
-		FileError(std::string path);
+		explicit FileError(std::string path);
 		std::string_view message() const override;
 		void throwSelf() const override;
 		std::string_view filePath() const { return _arg; }
@@ -411,7 +386,7 @@ public:
 
 	class UnknownVarNameError final : public CCLIError {
 	public:
-		UnknownVarNameError(std::string name);
+		explicit UnknownVarNameError(std::string name);
 		std::string_view message() const override;
 		void throwSelf() const override;
 		std::string_view unknownName() const { return _arg; }
@@ -419,7 +394,7 @@ public:
 
 	class MissingValueError final : public CCLIError {
 	public:
-		MissingValueError(std::string name);
+		explicit MissingValueError(std::string name);
 		std::string_view message() const override;
 		void throwSelf() const override;
 		std::string_view variable() const { return _arg; }
@@ -469,4 +444,23 @@ public:
 	// Char with callback
 	template<typename F>
 	[[maybe_unused]] Var(std::string_view, std::string_view, const char*, uint32_t, std::string_view, F) -> Var<std::string, 1>;
+
+private:
+	class CSVParser {
+	public:
+		CSVParser(const std::string_view d, const char del) : _delimiter{ del }, _data{ d } {}
+
+		[[nodiscard]] bool hasNext() const;
+		std::string_view next();
+		[[nodiscard]] size_t count() const;
+		[[nodiscard]] std::string_view token() const;
+
+	private:
+		char _delimiter;
+		size_t _count{ 0 };
+		size_t _current{ 0 };
+		size_t _pos{ 0 };
+		std::string_view _data;
+		std::string_view _token;
+	};
 };
