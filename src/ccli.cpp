@@ -29,7 +29,6 @@ SOFTWARE.
 #include <set>
 #include <fstream>
 #include <filesystem>
-#include <charconv>
 #include <variant>
 
 namespace
@@ -181,6 +180,47 @@ namespace
 		file.write(content.data(), static_cast<std::streamsize>(content.size()));
 		file.close();
 	}
+
+	/*
+	** parser
+	*/
+	class CSVParser {
+	public:
+		CSVParser(const std::string_view d, const char del) : _delimiter{ del }, _data{ d } {}
+
+		[[nodiscard]] bool hasNext() const
+		{
+			return _pos != std::string::npos;
+		}
+
+		[[nodiscard]] std::string_view next()
+		{
+			_pos = _data.find(_delimiter, _current);
+			_token = _data.substr(_current, _pos - _current);
+			_current = _pos + 1;
+			_count++;
+
+			return _token;
+		}
+
+		[[nodiscard]] size_t count() const
+		{
+			return _count;
+		}
+
+		[[nodiscard]] std::string_view token() const
+		{
+			return _token;
+		}
+
+	private:
+		char _delimiter;
+		size_t _count{ 0 };
+		size_t _current{ 0 };
+		size_t _pos{ 0 };
+		std::string_view _data;
+		std::string_view _token;
+	};
 }
 
 void ccli::parseArgs(const size_t argc, const char* const argv[])
@@ -446,27 +486,40 @@ size_t ccli::VarBase::setValueStringInternal(const std::string_view string, cons
 	return csv.count() + offset;
 }
 
-template <typename T>
-T parseUsingFromChars(const ccli::VarBase& var, std::string_view token)
-{
-	T value;
-	auto result = std::from_chars(token.data(), token.data() + token.size(), value);
-	if (result.ec == std::errc::invalid_argument)
-	{
-		throw ccli::ConversionError{ var, std::string{ token } };
-	}
-
-	return value;
-}
+//template <typename T>
+//T parseUsingFromChars(const ccli::VarBase& var, std::string_view token)
+//{
+//	T value;
+//	auto result = std::from_chars(token.data(), token.data() + token.size(), value);
+//	if (result.ec == std::errc::invalid_argument)
+//	{
+//		throw ccli::ConversionError{ var, std::string{ token } };
+//	}
+//	return value;
+//}
 
 long long ccli::VarBase::parseIntegral(const ccli::VarBase& var, const std::string_view token)
 {
-	return parseUsingFromChars<long long>(var, token);
+	// return parseUsingFromChars<long long>(var, token);
+	char* end;
+	const long long v = std::strtoll(token.data(), &end, 10);
+	if (end != token.data() + token.size())
+	{
+		throw ccli::ConversionError{ var, std::string{ token } };
+	}
+	return v;
 }
 
 double ccli::VarBase::parseDouble(const ccli::VarBase& var, const std::string_view token)
 {
-	return parseUsingFromChars<double>(var, token);
+	// return parseUsingFromChars<double>(var, token);
+	char* end;
+	const double v = std::strtod(token.data(), &end);
+	if (end != token.data() + token.size())
+	{
+		throw ccli::ConversionError{ var, std::string{ token } };
+	}
+	return v;
 }
 
 bool ccli::VarBase::parseBool(const std::string_view token)
@@ -605,29 +658,4 @@ std::string_view ccli::ConversionError::message() const
 void ccli::ConversionError::throwSelf() const
 {
 	throw* this;
-}
-
-bool ccli::CSVParser::hasNext() const
-{
-	return _pos != std::string::npos;
-}
-
-std::string_view ccli::CSVParser::next()
-{
-	_pos = _data.find(_delimiter, _current);
-	_token = _data.substr(_current, _pos - _current);
-	_current = _pos + 1;
-	_count++;
-
-	return _token;
-}
-
-size_t ccli::CSVParser::count() const
-{
-	return _count;
-}
-
-std::string_view ccli::CSVParser::token() const
-{
-	return _token;
 }

@@ -33,22 +33,21 @@ SOFTWARE.
 #include <map>
 #include <cstdint>
 
-class ccli
+namespace ccli
 {
-public:
 	// Parse
-	static void parseArgs(size_t argc, const char* const argv[]);
+	void parseArgs(size_t argc, const char* const argv[]);
 	// Config
 	using ConfigCache = std::map<std::string, std::string>;
-	static ConfigCache loadConfig(const std::string& cfgFile);
-	static void writeConfig(const std::string& cfgFile, ConfigCache& cache);
-	static void writeConfig(const std::string& cfgFile);
+	ConfigCache loadConfig(const std::string& cfgFile);
+	void writeConfig(const std::string& cfgFile, ConfigCache& cache);
+	void writeConfig(const std::string& cfgFile);
 	// Callback
-	static void executeCallbacks();
+	void executeCallbacks();
 	// For all vars
 	class VarBase;
 	enum class IterationDecision { Continue, Break };
-	static IterationDecision forEachVar(const std::function<IterationDecision(VarBase& var, size_t idx)>&);
+	IterationDecision forEachVar(const std::function<IterationDecision(VarBase& var, size_t idx)>&);
 
 	enum Flag
 	{
@@ -112,10 +111,10 @@ public:
 		void unlock() noexcept;
 		void locked(bool locked) noexcept;
 
+        size_t setValueStringInternal(std::string_view, size_t offset = 0);
 	protected:
 		static constexpr char _delimiter = ',';
 
-		size_t setValueStringInternal(std::string_view, size_t offset = 0);
 		virtual void setValueStringInternalAtIndex(size_t, std::string_view) = 0;
 		virtual void applyLimitsAndDoCallback() = 0;
 
@@ -123,7 +122,6 @@ public:
 		static double parseDouble(const VarBase&, std::string_view);
 		static bool parseBool(std::string_view);
 
-		friend class ccli;
 		const std::string _shortName;
 		const std::string _longName;
 		const std::string _description;
@@ -413,55 +411,36 @@ public:
 	};
 
 	// Deduction guides
-	template <class T, class... U>
-	[[maybe_unused]] explicit Storage(T, U...)->Storage<T, 1 + sizeof...(U)>;
+    template <class T, class... U>
+	explicit Storage(T, U...)->Storage<T, 1 + sizeof...(U)>;
 
 	// Size N
 	template<typename T, size_t S>
-	[[maybe_unused]] Var(std::string_view, std::string_view, const T(&)[S]) -> Var<T, S>;
+	Var(std::string_view, std::string_view, const T(&)[S]) -> Var<T, S>;
 	template<typename T, size_t S>
-	[[maybe_unused]] Var(std::string_view, std::string_view, const T(&)[S], uint32_t) -> Var<T, S>;
+	Var(std::string_view, std::string_view, const T(&)[S], uint32_t) -> Var<T, S>;
 	template<typename T, size_t S>
-	[[maybe_unused]] Var(std::string_view, std::string_view, const T(&)[S], uint32_t, std::string_view) -> Var<T, S>;
+	Var(std::string_view, std::string_view, const T(&)[S], uint32_t, std::string_view) -> Var<T, S>;
 	// Size N with callback
 	template<typename T, size_t S, typename F>
-	[[maybe_unused]] Var(std::string_view, std::string_view, const T(&)[S], uint32_t, std::string_view, F) -> Var<T, S>;
+	Var(std::string_view, std::string_view, const T(&)[S], uint32_t, std::string_view, F) -> Var<T, S>;
 
 	// Size 1
 	template<typename T>
-	[[maybe_unused]] Var(std::string_view, std::string_view, T) -> Var<T, 1>;
+	Var(std::string_view, std::string_view, T) -> Var<T, 1>;
 	template<typename T>
-	[[maybe_unused]] Var(std::string_view, std::string_view, T, uint32_t) -> Var<T, 1>;
+	Var(std::string_view, std::string_view, T, uint32_t) -> Var<T, 1>;
 	template<typename T>
-	[[maybe_unused]] Var(std::string_view, std::string_view, T, uint32_t, std::string_view) -> Var<T, 1>;
+	Var(std::string_view, std::string_view, T, uint32_t, std::string_view) -> Var<T, 1>;
 	// Size 1 with callback
 	template<typename T, typename F>
-	[[maybe_unused]] Var(std::string_view, std::string_view, T, uint32_t, std::string_view, F) -> Var<T, 1>;
+	Var(std::string_view, std::string_view, T, uint32_t, std::string_view, F) -> Var<T, 1>;
 
 	// Char
-	[[maybe_unused]] Var(std::string_view, std::string_view, const char*)->Var<std::string, 1>;
-	[[maybe_unused]] Var(std::string_view, std::string_view, const char*, uint32_t)->Var<std::string, 1>;
-	[[maybe_unused]] Var(std::string_view, std::string_view, const char*, uint32_t, std::string_view)->Var<std::string, 1>;
+	Var(std::string_view, std::string_view, const char*)->Var<std::string, 1>;
+	Var(std::string_view, std::string_view, const char*, uint32_t)->Var<std::string, 1>;
+	Var(std::string_view, std::string_view, const char*, uint32_t, std::string_view)->Var<std::string, 1>;
 	// Char with callback
 	template<typename F>
-	[[maybe_unused]] Var(std::string_view, std::string_view, const char*, uint32_t, std::string_view, F) -> Var<std::string, 1>;
-
-private:
-	class CSVParser {
-	public:
-		CSVParser(const std::string_view d, const char del) : _delimiter{ del }, _data{ d } {}
-
-		[[nodiscard]] bool hasNext() const;
-		std::string_view next();
-		[[nodiscard]] size_t count() const;
-		[[nodiscard]] std::string_view token() const;
-
-	private:
-		char _delimiter;
-		size_t _count{ 0 };
-		size_t _current{ 0 };
-		size_t _pos{ 0 };
-		std::string_view _data;
-		std::string_view _token;
-	};
+	Var(std::string_view, std::string_view, const char*, uint32_t, std::string_view, F) -> Var<std::string, 1>;
 };
