@@ -208,7 +208,7 @@ namespace
 			return _count;
 		}
 
-		[[nodiscard]] std::string_view token() const
+		[[nodiscard, maybe_unused]] std::string_view token() const
 		{
 			return _token;
 		}

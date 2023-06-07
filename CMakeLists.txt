@@ -16,6 +16,12 @@ endif()
 
 cmake_minimum_required(VERSION 3.14.0)
 
+
+# PROJECT
+#set(CMAKE_GENERATOR_TOOLSET "ClangCL")
+project(ccli)
+set(CCLI ccli)
+
 # VARS
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     set(CCLI_IS_TOPLEVEL_PROJECT TRUE)
@@ -23,11 +29,6 @@ else()
     set(CCLI_IS_TOPLEVEL_PROJECT FALSE)
 endif()
 option(CCLI_BUILD_TESTS "Build Tests" ${CCLI_IS_TOPLEVEL_PROJECT})
-
-# PROJECT
-#set(CMAKE_GENERATOR_TOOLSET "ClangCL")
-project(ccli)
-set(CCLI ccli)
 
 # COMPILER
 set(CMAKE_CXX_STANDARD 20)
