@@ -342,7 +342,7 @@ void ccli::writeConfig(const std::string& cfgFile, ConfigCache& cache)
 		outStream << '\"' << snd << "\"\n";
 	}
 	// write config
-	if (outStream.tellp()) writeConfigFile(cfgFile, outStream.view());
+	if (outStream.tellp()) writeConfigFile(cfgFile, outStream.str());
 }
 
 void ccli::writeConfig(const std::string& cfgFile)
