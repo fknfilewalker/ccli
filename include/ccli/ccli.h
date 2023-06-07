@@ -31,6 +31,7 @@ SOFTWARE.
 #include <optional>
 #include <span>
 #include <map>
+#include <cstdint>
 
 class ccli
 {
@@ -358,9 +359,9 @@ public:
 	class CCLIError : public std::exception {
 	public:
 		explicit CCLIError(std::string m);
-		const char* what() const final { return message().data(); }
+        const char* what() const noexcept override { return message().data(); }
 		virtual std::string_view message() const { return _message; }
-		virtual void throwSelf() const= 0;
+		virtual void throwSelf() const = 0;
 	protected:
 		struct ArgType {};
 		CCLIError(ArgType, std::string a);

@@ -5,6 +5,9 @@
 #include <array>
 #include <iostream>
 #include <fstream>
+#include <cstring>
+#include <limits>
+#include <algorithm>
 
 using namespace std::literals;
 
