@@ -267,6 +267,19 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 			// find new arg
 			var = nullptr;
 			idxOffset = 0;
+
+			// --var=123 cases
+			if (longName) {
+				if (const std::size_t found = arg.find_first_of('='); found != std::string::npos)
+				{
+					var = findVarByLongName(arg.substr(2, found - 2));
+					if(arg.size() <= (found + 1)) deferredError = std::make_unique<ccli::MissingValueError>(std::string{ arg });
+					var->setValueStringInternal(arg.substr(found + 1), idxOffset);
+					var = nullptr;
+					continue;
+				}
+			}
+
 			if (longName) var = findVarByLongName(arg.substr(2));
 			else if (shortName) var = findVarByShortName(arg.substr(1));
 			

@@ -67,7 +67,7 @@ void immutableTest()
 	assert(lockedVar == 333);
 
 	try {
-		const char* argv[] = { "--readOnly", "1", "--cliOnly", "2", "--locked", "3"};
+		const char* argv[] = { "--readOnly", "1", "--cliOnly=2", "--locked", "3"};
 		ccli::parseArgs(std::size(argv), argv);
 	}
 	catch (ccli::CCLIError& e) {
@@ -91,7 +91,7 @@ void immutableTest()
 
 void arrayTest()
 {
-	ccli::Var<uint32_t, 3> uvec3Var("uvec3"sv, ""sv, { 1, 2, 3 });
+	ccli::Var<uint32_t, 3> uvec3Var(""sv, "uvec3"sv, { 1, 2, 3 });
 	ccli::Var<std::string, 2> stringVar("string"sv, ""sv, { "This is a test", "really" });
 	ccli::Var<uint8_t, 2, ccli::MaxLimit<2>> limitVar("limit"sv, ""sv, { 3, 4 });
 
@@ -103,7 +103,7 @@ void arrayTest()
 	assert(limitVar[0] == 2 && limitVar[1] == 2);
 
 	try {
-		const char* argv[] = { "-uvec3", "5,6,7", "-string", "This is not a test,or is it", "-limit", "100,200" };
+		const char* argv[] = { "--uvec3=5,6,7", "-string", "This is not a test,or is it", "-limit", "100,200" };
 		ccli::parseArgs(std::size(argv), argv);
 	}
 	catch (ccli::CCLIError& e) {
