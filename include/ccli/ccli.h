@@ -240,7 +240,7 @@ namespace ccli
 
 		std::string valueString() override
 		{
-			std::stringstream stream;
+			std::basic_stringstream<char, std::char_traits<char>, std::allocator<char>> stream;
 			for (size_t i = 0; i != _value.size(); i++)
 			{
 				if (i) stream << _delimiter;
