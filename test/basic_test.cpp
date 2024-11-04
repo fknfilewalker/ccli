@@ -1,19 +1,21 @@
-#include <ccli/ccli.h>
 #include <iostream>
 #include <cassert>
 #include <string_view>
 #include <array>
-#include <iostream>
+#include <sstream>
 #include <fstream>
 #include <cstring>
 #include <limits>
 #include <algorithm>
+#include <span>
+#include <ccli/ccli.h>
+//import ccli;
 
 using namespace std::literals;
 
 void basicBoolTest()
 {
-	ccli::Var<bool> boolVar1("b1"sv, "bool1"sv, 0, ccli::None, "First bool Var"sv);
+	ccli::Var<bool> boolVar1("b1"sv, "bool1"sv, 0, ccli::Flag::None, "First bool Var"sv);
 	ccli::Var<bool> boolVar2("b2"sv, "bool2"sv, false, ccli::None, "Second bool Var"sv);
 	ccli::Var<bool> boolVar3("b3"sv, "bool3"sv, 1, ccli::None, "Third bool Var"sv);
 	ccli::Var<bool> boolVar4("b4"sv, "bool4"sv, true, ccli::None, "Fourth bool Var"sv);

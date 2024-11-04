@@ -16,11 +16,11 @@ endif()
 
 cmake_minimum_required(VERSION 3.14.0)
 
-
 # PROJECT
 #set(CMAKE_GENERATOR_TOOLSET "ClangCL")
 project(ccli)
 set(CCLI ccli)
+set(CCLI_USE_MODULE FALSE)
 
 # VARS
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -42,15 +42,25 @@ endif()
 # SOURCES
 file(GLOB SOURCES "src/ccli.cpp")
 file(GLOB HEADERS "include/ccli/ccli.h")
-
-# GROUPING
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" PREFIX "Source Files" FILES ${SOURCES})
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/include" PREFIX "Header Files" FILES ${HEADERS})
+file(GLOB MODULE "src/ccli.cppm")
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" FILES ${SOURCES})
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/include/ccli" FILES ${HEADERS})
 
 # TARGET
-add_library(${CCLI} STATIC ${SOURCES} ${HEADERS})
+add_library(${CCLI} STATIC )
 add_library(${CCLI}::${CCLI} ALIAS ${CCLI})
 target_include_directories(${CCLI} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_sources(${CCLI}
+	PUBLIC FILE_SET HEADERS FILES ${HEADERS}
+	PRIVATE ${SOURCES}
+)
+
+if(CCLI_USE_MODULE)
+	target_sources(${CCLI}
+		PUBLIC FILE_SET CXX_MODULES FILES ${MODULE}
+	)
+	source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" FILES ${MODULE})
+endif()
 
 if(CCLI_BUILD_TESTS)
 	# exe

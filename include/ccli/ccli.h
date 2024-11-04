@@ -217,7 +217,7 @@ namespace ccli
 		Var(const std::string_view shortName, const std::string_view longName, const TStorage& value = {},
 		    const uint32_t flags = None, const std::string_view description = {},
 		    const TCallback callback = {})
-			: VarBase(shortName, longName, flags, description, callback != nullptr),
+			: VarBase(shortName, longName, flags, description, static_cast<bool>(callback)),
 				_callback{ callback }, _callbackCharged{ false }, _value{ LimitApplier<TLimits...>::apply(value) } {}
 
 		~Var() override = default;
