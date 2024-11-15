@@ -29,6 +29,7 @@ SOFTWARE.
 #include <set>
 #include <fstream>
 #include <filesystem>
+#include <algorithm>
 #include <variant>
 
 namespace

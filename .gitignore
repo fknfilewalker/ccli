@@ -2,3 +2,5 @@
 _project
 _bin
 *.cfg
+
+build/
