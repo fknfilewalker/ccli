@@ -226,7 +226,7 @@ bool hasFalseVar= result == ccli::IterationDecision::Break;
 
 - `ccli::FileError` Thrown if a config file could not be opened for writing.
 
-- `ccli::UnknownVarNameError` Thrown if a CLI option references an unknown variable name during parsing.
+- `ccli::UnknownArgError` Thrown if a CLI argument is unknown during parsing.
 
 - `ccli::MissingValueError` Thrown if a non-bool CLI option is missing a value during parsing.
 
