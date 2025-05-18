@@ -4,13 +4,13 @@ MIT License
 Copyright(c) 2023 Lukas Lipp, Matthias Preymann
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this softwareand associated documentation files(the "Software"), to deal
+of this software and associated documentation files(the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and /or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions :
 
-The above copyright noticeand this permission notice shall be included in all
+The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -286,7 +286,7 @@ void ccli::parseArgs(const size_t argc, const char* const argv[])
 			
 			// error if not found -> throw the error after parsing the rest of the arguments
 			if (var == nullptr && !deferredError) {
-				deferredError= std::make_unique<ccli::UnknownVarNameError>(std::string{ arg });
+				deferredError= std::make_unique<ccli::UnknownArgError>(std::string{ arg });
 			}
 		}
 		// Var found
@@ -395,7 +395,7 @@ ccli::VarBase::VarBase(const std::string_view shortName, const std::string_view 
 	addToVarList(_longName, _shortName, this);
 	if (_hasCallback) addToCallbackSet(this);
 	/*if (_longName.empty() && (isConfigRead() || isConfigReadWrite())) {
-		getErrorDeque().emplace_back("Config requieres long name \"\'-" + _shortName + "\'");
+		getErrorDeque().emplace_back("Config requires long name \"\'-" + _shortName + "\'");
 	}*/
 }
 
@@ -556,31 +556,33 @@ bool ccli::VarBase::parseBool(const std::string_view token)
 	return value;
 }
 
-template<typename T, typename ... Rest>
-void builderAppend(std::string& buffer, const T& val, const Rest& ... rest) {
-	buffer+= val;
+namespace {
+	template<typename T, typename ... Rest>
+	void builderAppend(std::string& buffer, const T& val, const Rest& ... rest) {
+		buffer += val;
 
-	if constexpr (sizeof...(Rest) > 0) {
-		builderAppend(buffer, rest...);
-	}
-}
-
-template<typename T, typename ... Rest>
-size_t countAppendedLength(const T& val, const Rest& ... rest)
-{
-	if constexpr (sizeof...(Rest) > 0) {
-		return val.size() + countAppendedLength(rest...);
+		if constexpr (sizeof...(Rest) > 0) {
+			builderAppend(buffer, rest...);
+		}
 	}
 
-	return val.size();
-}
+	template<typename T, typename ... Rest>
+	size_t countAppendedLength(const T& val, const Rest& ... rest)
+	{
+		if constexpr (sizeof...(Rest) > 0) {
+			return val.size() + countAppendedLength(rest...);
+		}
 
-template<typename ... T>
-std::string buildString(const T& ... vals) {
-	std::string buffer;
-	buffer.reserve(countAppendedLength(vals...));
-	builderAppend(buffer, vals...);
-	return buffer;
+		return val.size();
+	}
+
+	template<typename ... T>
+	std::string buildString(const T& ... vals) {
+		std::string buffer;
+		buffer.reserve(countAppendedLength(vals...));
+		builderAppend(buffer, vals...);
+		return buffer;
+	}
 }
 
 ccli::CCLIError::CCLIError(std::string m)
@@ -623,19 +625,19 @@ void ccli::FileError::throwSelf() const
 	throw* this;
 }
 
-ccli::UnknownVarNameError::UnknownVarNameError(std::string name)
+ccli::UnknownArgError::UnknownArgError(std::string name)
 	: CCLIError{ {}, std::move(name) } {}
 
-std::string_view ccli::UnknownVarNameError::message() const
+std::string_view ccli::UnknownArgError::message() const
 {
 	if (_message.empty()) {
-		_message = buildString("Unknown variable name '"sv, _arg, "' while parsing arguments."sv);
+		_message = buildString("Unknown input '"sv, _arg, "' while parsing arguments."sv);
 	}
 
 	return _message;
 }
 
-void ccli::UnknownVarNameError::throwSelf() const
+void ccli::UnknownArgError::throwSelf() const
 {
 	throw* this;
 }

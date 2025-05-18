@@ -22,7 +22,7 @@ export namespace ccli {
 	using ccli::CCLIError;
 	using ccli::DuplicatedVarNameError;
 	using ccli::FileError;
-	using ccli::UnknownVarNameError;
+	using ccli::UnknownArgError;
 	using ccli::MissingValueError;
 	using ccli::ConversionError;
 }

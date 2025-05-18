@@ -383,9 +383,9 @@ namespace ccli
 		std::string_view filePath() const { return _arg; }
 	};
 
-	class UnknownVarNameError final : public CCLIError {
+	class UnknownArgError final : public CCLIError {
 	public:
-		explicit UnknownVarNameError(std::string name);
+		explicit UnknownArgError(std::string name);
 		std::string_view message() const override;
 		void throwSelf() const override;
 		std::string_view unknownName() const { return _arg; }
